@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTArchitect — {{ scenario.get('scenario', 'unknown') }}</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 32px 40px 20px;
+    border-bottom: 1px solid #21262d;
+    background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+  }
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    color: #f0883e;
+  }
+  .subtitle { margin: 4px 0 0; color: #8b949e; font-size: 14px; }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #8b949e;
+  }
+  .meta strong { color: #e6edf3; font-weight: 600; }
+  main { padding: 28px 40px 48px; max-width: 1200px; }
+  h2 {
+    font-size: 18px;
+    color: #58a6ff;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 8px;
+    margin: 36px 0 18px;
+  }
+  h3 { margin: 0 0 8px; font-size: 16px; }
+  h4 { margin: 14px 0 6px; font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 24px; }
+  .card {
+    flex: 1 1 140px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-align: center;
+  }
+  .card .number { display: block; font-size: 26px; font-weight: 700; }
+  .card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card.critical .number { color: #f85149; }
+  .card.warning .number { color: #d29922; }
+  .card.info .number { color: #58a6ff; }
+  .card.neutral .number { color: #e6edf3; }
+
+  .finding {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-left: 4px solid #8b949e;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+  }
+  .finding.critical { border-left-color: #f85149; }
+  .finding.warning { border-left-color: #d29922; }
+  .finding.info { border-left-color: #58a6ff; }
+  .finding-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+  }
+  .badge.critical { color: #f85149; }
+  .badge.warning { color: #d29922; }
+  .badge.info { color: #58a6ff; }
+  .rule { font-family: ui-monospace, monospace; font-size: 12px; color: #8b949e; }
+  .fid { margin-left: auto; font-family: ui-monospace, monospace; font-size: 12px; color: #6e7681; }
+  .condition { margin: 6px 0 0; font-size: 13px; color: #8b949e; }
+  .condition code { font-family: ui-monospace, monospace; color: #79c0ff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .grid table { width: 100%; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #30363d; padding: 7px 10px; text-align: left; }
+  th { background: #21262d; color: #e6edf3; font-weight: 600; }
+  td { color: #c9d1d9; }
+  td:first-child { color: #e6edf3; }
+  ul.evidence { margin: 4px 0 0; padding-left: 20px; color: #79c0ff; font-size: 13px; }
+  ul.evidence li { margin: 3px 0; }
+  .recommendation { margin: 12px 0 0; font-size: 13px; color: #a5d6a7; }
+  .ai {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-left: 3px solid #a371f7;
+    background: #161b22;
+    color: #d2a8ff;
+    font-size: 13px;
+    font-style: italic;
+  }
+  .clean {
+    background: #161b22;
+    border: 1px solid #238636;
+    border-radius: 10px;
+    padding: 22px;
+  }
+  .clean .ok { color: #3fb950; font-weight: 600; margin: 0; }
+
+  .graph {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+  .node rect { fill: #161b22; stroke: #30363d; stroke-width: 1.5; }
+  .node text { fill: #e6edf3; font-size: 12px; font-family: ui-monospace, monospace; }
+  .node.critical rect { stroke: #d29922; stroke-width: 2.5; }
+  .node.has-finding rect { stroke: #f85149; stroke-width: 2.5; }
+  .edge-label {
+    fill: #8b949e;
+    font-size: 10px;
+    font-family: ui-monospace, monospace;
+    paint-order: stroke;
+    stroke: #0d1117;
+    stroke-width: 3px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: 12px; color: #8b949e; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .swatch.critical { border: 2px solid #d29922; }
+  .swatch.has-finding { border: 2px solid #f85149; }
+
+  footer {
+    padding: 20px 40px;
+    border-top: 1px solid #21262d;
+    color: #6e7681;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>RTArchitect</h1>
+  <p class="subtitle">Deterministic-first QNX IPC architectural analysis</p>
+  <div class="meta">
+    <span>Scenario: <strong>{{ scenario.get('scenario', 'unknown') }}</strong></span>
+    <span>Target: <strong>{{ scenario.get('target', 'QNX 8.0 QEMU') }}</strong></span>
+    <span>Deadline: <strong>{{ scenario.get('deadline_ms') }} ms</strong></span>
+    <span>Generated: <strong>{{ generated_at }}</strong></span>
+  </div>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="card critical"><span class="number">{{ severity_counts.get('critical', 0) }}</span><span class="label">Critical</span></div>
+    <div class="card warning"><span class="number">{{ severity_counts.get('warning', 0) }}</span><span class="label">Warning</span></div>
+    <div class="card info"><span class="number">{{ severity_counts.get('info', 0) }}</span><span class="label">Info</span></div>
+    <div class="card neutral"><span class="number">{{ node_metrics|length }}</span><span class="label">Services</span></div>
+    <div class="card neutral"><span class="number">{{ edge_metrics|length }}</span><span class="label">IPC Edges</span></div>
+  </div>
+
+  <h2>Findings</h2>
+  {% if findings %}
+    {% for f in findings %}
+    <article class="finding {{ f.severity }}">
+      <div class="finding-head">
+        <span class="badge {{ f.severity }}">{{ f.severity }}</span>
+        <span class="rule">{{ f.rule_id }}</span>
+        <span class="fid">{{ f.finding_id }}</span>
+      </div>
+      <h3>{{ f.title }}</h3>
+      <p class="condition"><strong>Condition:</strong> <code>{{ f.condition }}</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            {% for key, value in f.observed.items() %}
+            <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            {% for key, value in f.thresholds.items() %}
+            <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        {% for item in f.evidence %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> {{ f.recommendation }}</p>
+      {% if f.ai_explanation %}
+      <div class="ai"><strong>AI Analysis:</strong> {{ f.ai_explanation }}</div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  {% else %}
+    <div class="clean">
+      <p class="ok">No deterministic findings. The architecture satisfies every configured rule.</p>
+    </div>
+  {% endif %}
+
+  {% if svg_graph %}
+  <h2>Service Interaction Graph</h2>
+  <div class="graph">{{ svg_graph | safe }}</div>
+  <div class="legend">
+    <span><span class="swatch critical"></span> On critical path</span>
+    <span><span class="swatch has-finding"></span> Has a finding</span>
+    <span>Edge label = message type</span>
+  </div>
+  {% endif %}
+
+  <h2>Node Metrics</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th><th>In-degree</th><th>Out-degree</th>
+        <th>P95 processing (ms)</th><th>Messages received</th>
+        <th>Critical path</th><th>High-prio blocked</th><th>Low-prio ratio</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, m in node_metrics.items() | sort %}
+      <tr>
+        <td>{{ name }}</td>
+        <td>{{ m.in_degree }}</td>
+        <td>{{ m.out_degree }}</td>
+        <td>{{ "%.3f"|format(m.p95_processing_ns / 1000000) }}</td>
+        <td>{{ m.total_messages_received }}</td>
+        <td>{{ "yes" if m.on_critical_path else "no" }}</td>
+        <td>{{ m.high_priority_blocked_count }}</td>
+        <td>{{ "%.1f%%"|format(m.low_priority_work_ratio * 100) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Edge Metrics</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Edge</th><th>Message type</th><th>Count</th>
+        <th>P50 queue (ms)</th><th>P95 queue (ms)</th>
+        <th>P95 processing (ms)</th><th>P95 total (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, m in edge_metrics.items() | sort %}
+      <tr>
+        <td>{{ m.src_name }} &rarr; {{ m.dst_name }}</td>
+        <td>{{ m.msg_type }}</td>
+        <td>{{ m.count }}</td>
+        <td>{{ "%.3f"|format(m.p50_queue_wait_ns / 1000000) }}</td>
+        <td>{{ "%.3f"|format(m.p95_queue_wait_ns / 1000000) }}</td>
+        <td>{{ "%.3f"|format(m.p95_processing_ns / 1000000) }}</td>
+        <td>{{ "%.3f"|format(m.p95_total_ns / 1000000) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</main>
+
+<footer>
+  <p>RTArchitect &mdash; deterministic-first QNX IPC analysis. Every finding is evidence-backed and rule-generated.
+  AI explanation is optional and never required for the deterministic core.</p>
+</footer>
+</body>
+</html>
