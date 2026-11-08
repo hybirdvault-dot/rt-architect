@@ -38,6 +38,18 @@ QNX occasionally offers a time-limited evaluation SDP. Same install steps.
 
 ## 2. Install QEMU
 
+**Without root (recommended on Deepin/UOS, where sudo needs a password):**
+
+```sh
+bash scripts/setup_qemu_local.sh
+~/rt-architect-tools/qemu/bin/qemu-system-x86_64 --version
+```
+
+This downloads the `.deb` packages and extracts them into
+`~/rt-architect-tools/qemu`, so no system-wide install is needed.
+
+**With root:**
+
 ```sh
 sudo apt-get update
 sudo apt-get install qemu-system-x86 qemu-system-arm qemu-utils
