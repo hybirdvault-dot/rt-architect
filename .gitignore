@@ -6,6 +6,10 @@ __pycache__/
 build/
 dist/
 
+# C / simulation build artefacts
+*.o
+target/linux_sim/rtarch_sim
+
 # Virtual environments
 .venv/
 venv/
