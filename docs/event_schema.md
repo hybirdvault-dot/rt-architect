@@ -28,8 +28,8 @@ RTARCH v=1 ts_ns=1015000000 phase=REPLY trace_id=1001 msg_id=42 src_pid=201 src_
 | `v` | int | Schema version (always `1`) |
 | `ts_ns` | uint64 | Nanosecond timestamp from `CLOCK_MONOTONIC` |
 | `phase` | string | `SEND`, `RECV`, or `REPLY` |
-| `trace_id` | uint64 | Follows one request across services |
-| `msg_id` | uint32 | Identifies one request/reply pair |
+| `trace_id` | uint64 | Identifies one request/reply exchange and follows it through SEND, RECV and REPLY |
+| `msg_id` | uint32 | Identifies the same exchange within a trace |
 | `src_pid` | int | Source process ID |
 | `src_name` | string | Source service name |
 | `dst_pid` | int | Destination process ID |
@@ -41,8 +41,14 @@ RTARCH v=1 ts_ns=1015000000 phase=REPLY trace_id=1001 msg_id=42 src_pid=201 src_
 
 - **`ts_ns`** — our own `CLOCK_MONOTONIC` reading; never slog2's clock.
 - **`phase`** — `SEND`/`RECV`/`REPLY` gives us queue wait and processing time.
-- **`trace_id`** — follows a request across multiple services (critical path).
-- **`msg_id`** — matches the three phases of one request.
+- **`trace_id`** — identifies one request/reply exchange and follows it through
+  the three phases. **Each hop of a multi-service call needs its own
+  `(trace_id, msg_id)` pair**, because the host groups events into triples by
+  that key. A forwarding service must allocate a fresh pair from a range
+  disjoint from its peer's; reusing the incoming pair collapses two hops into
+  one triple and the upstream edge disappears from the graph.
+- **`msg_id`** — distinguishes one exchange from another inside the same
+  trace_id.
 - **`prio`** — detects priority inversion and head-of-line blocking.
 
 ## Latency model

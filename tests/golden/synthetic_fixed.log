@@ -1,9 +1,9 @@
 RTARCH v=1 ts_ns=1000000000 phase=SEND trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=perception_service msg_type=SENSOR_FRAME prio=25
 RTARCH v=1 ts_ns=1000500000 phase=RECV trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=perception_service msg_type=SENSOR_FRAME prio=25
 RTARCH v=1 ts_ns=1002500000 phase=REPLY trace_id=1001 msg_id=1 src_pid=201 src_name=perception_service dst_pid=101 dst_name=sensor_service msg_type=SENSOR_ACK prio=25
-RTARCH v=1 ts_ns=1003000000 phase=SEND trace_id=1002 msg_id=2 src_pid=201 src_name=perception_service dst_pid=301 dst_name=brake_controller_fast msg_type=BRAKE_CMD prio=30
-RTARCH v=1 ts_ns=1003200000 phase=RECV trace_id=1002 msg_id=2 src_pid=201 src_name=perception_service dst_pid=301 dst_name=brake_controller_fast msg_type=BRAKE_CMD prio=30
-RTARCH v=1 ts_ns=1005200000 phase=REPLY trace_id=1002 msg_id=2 src_pid=301 src_name=brake_controller_fast dst_pid=201 dst_name=perception_service msg_type=BRAKE_ACK prio=30
+RTARCH v=1 ts_ns=1003000000 phase=SEND trace_id=5001 msg_id=1 src_pid=201 src_name=perception_service dst_pid=301 dst_name=brake_controller_fast msg_type=BRAKE_CMD prio=30
+RTARCH v=1 ts_ns=1003200000 phase=RECV trace_id=5001 msg_id=1 src_pid=201 src_name=perception_service dst_pid=301 dst_name=brake_controller_fast msg_type=BRAKE_CMD prio=30
+RTARCH v=1 ts_ns=1005200000 phase=REPLY trace_id=5001 msg_id=1 src_pid=301 src_name=brake_controller_fast dst_pid=201 dst_name=perception_service msg_type=BRAKE_ACK prio=30
 RTARCH v=1 ts_ns=1004000000 phase=SEND trace_id=2001 msg_id=3 src_pid=401 src_name=telemetry_client dst_pid=302 dst_name=brake_controller_slow msg_type=TELEMETRY_REQ prio=10
 RTARCH v=1 ts_ns=1004500000 phase=RECV trace_id=2001 msg_id=3 src_pid=401 src_name=telemetry_client dst_pid=302 dst_name=brake_controller_slow msg_type=TELEMETRY_REQ prio=10
 RTARCH v=1 ts_ns=1005500000 phase=REPLY trace_id=2001 msg_id=3 src_pid=302 src_name=brake_controller_slow dst_pid=401 dst_name=telemetry_client msg_type=TELEMETRY_ACK prio=10

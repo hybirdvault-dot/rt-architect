@@ -82,3 +82,30 @@ def test_graph_topology():
     assert graph.number_of_edges() == 4
     assert graph.has_edge("sensor_service", "perception_service")
     assert graph.has_edge("perception_service", "brake_controller")
+
+
+def test_every_hop_has_a_complete_triple():
+    """
+    Regression: a forwarding service that reuses the incoming (trace_id,
+    msg_id) collapses two hops into one triple and the upstream edge vanishes.
+    Every edge in the flawed log must therefore have a complete triple.
+    """
+    _, _, edges, _, _ = _flawed()
+    assert set(edges) == {
+        "sensor_service->perception_service",
+        "perception_service->brake_controller",
+        "telemetry_client->brake_controller",
+        "diagnostics_client->brake_controller",
+    }
+    assert all(em.count > 0 for em in edges.values())
+
+
+def test_hops_use_distinct_trace_ids():
+    """The two SEND events of a two-hop request must not share a trace_id."""
+    events = parse_log(FLAWED_LOG)
+    sends = [e for e in events if e.phase.value == "SEND"]
+    sensor_hop = {e.trace_id for e in sends if e.src_name == "sensor_service"}
+    brake_hop = {e.trace_id for e in sends if e.src_name == "perception_service"}
+    assert sensor_hop, "expected sensor hop SEND events"
+    assert brake_hop, "expected perception->brake hop SEND events"
+    assert sensor_hop.isdisjoint(brake_hop)

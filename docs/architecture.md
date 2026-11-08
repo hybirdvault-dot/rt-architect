@@ -45,8 +45,10 @@ service graph into a cyclic graph. Edges are therefore derived from `SEND` and
 
 ### Latency model
 
-Every request is identified by `(trace_id, msg_id)`. When all three phases are
-present:
+Every request is identified by `(trace_id, msg_id)`. Each hop of a multi-service
+call allocates a fresh pair from a range disjoint from its peer's, so the
+grouping below always describes exactly one request/reply exchange. When all
+three phases are present:
 
 ```
 queue_wait = RECV.ts_ns - SEND.ts_ns
