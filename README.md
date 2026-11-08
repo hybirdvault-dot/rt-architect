@@ -27,7 +27,10 @@ optional later layer — the tool never depends on it.
 - [x] Self-contained HTML report with a static SVG service graph
 - [x] Typer + Rich CLI
 - [x] `pytest` suite — 28 tests
-- [ ] QNX 8.0 QEMU target instrumentation (`rtarch_ipc.h`)
+- [x] QNX 8.0 target instrumentation (`rtarch_ipc.h`) — API verified against the QNX 8.0 library reference
+- [x] Five demo services with the flawed single-threaded `brake_controller`
+- [x] Host-side simulation that compiles the real C sources and runs the full pipeline
+- [ ] Real QNX 8.0 QEMU run — **blocked in this environment** (no QNX SDP, no QEMU, no sudo)
 - [ ] Optional AI explainer with 5 s timeout + deterministic fallback
 - [ ] Second scenario (medical pump)
 
@@ -66,6 +69,46 @@ Options:
   --output, -o     Output HTML report path. [default: report.html]
   --help           Show this message and exit.
 ```
+
+---
+
+## QNX target
+
+The QNX 8.0 C sources live in `target/qnx8_demo/`. They compile against the
+real QNX SDP and emit the locked `RTARCH` format through `slog2`.
+
+```
+target/
+├── qnx8_demo/          # the real QNX 8.0 services
+│   ├── include/rtarch_ipc.h
+│   ├── sensor_service/  perception_service/  brake_controller/
+│   ├── telemetry_client/  diagnostics_client/
+│   └── scripts/        # run_flawed_demo.sh, extract_slog2.sh
+└── linux_sim/          # host-side simulation of the same sources
+    ├── include/        # QNX-compatible slog2 / IPC headers
+    ├── shim.c          # condition-variable implementation of QNX IPC
+    └── run_sim.sh      # build, run, and analyse
+```
+
+### Build for QNX
+
+```sh
+source /opt/qnx800/qnxsdp-env.sh
+cd target/qnx8_demo
+make
+```
+
+### Run the host-side simulation (no QNX required)
+
+```sh
+bash target/linux_sim/run_sim.sh
+```
+
+This compiles the **real** service sources against a QNX compatibility shim,
+runs them as threads, writes `examples/logs/sim_flawed_slog2.txt`, and analyses
+it. It is a functional simulation — it validates the C sources, the log format
+and the pipeline, but it is **not** QNX evidence. See
+[docs/qnx_setup.md](docs/qnx_setup.md) for the real QEMU workflow.
 
 ---
 
@@ -181,6 +224,9 @@ Golden logs live in `tests/golden/`.
 
 ```
 rt-architect/
+├── target/
+│   ├── qnx8_demo/           # QNX 8.0 C services (real target code)
+│   └── linux_sim/           # host-side QNX IPC / slog2 simulation
 ├── rtarch/                  # Python analysis package
 │   ├── parser.py            # RTARCH event parsing
 │   ├── models.py            # Pydantic models
