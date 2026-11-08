@@ -1,0 +1,19 @@
+{
+  "scenario": "brake_demo",
+  "target": "QNX 8.0 QEMU",
+  "deadline_ms": 5.0,
+  "critical_path": [
+    "sensor_service",
+    "perception_service",
+    "brake_controller"
+  ],
+  "thresholds": {
+    "max_in_degree": 2,
+    "processing_deadline_fraction": 0.5,
+    "low_priority_work_ratio": 0.4,
+    "queue_wait_ratio": 0.5,
+    "spof_min_in_degree": 2,
+    "priority_threshold": 20,
+    "blocked_queue_wait_ratio": 0.2
+  }
+}
