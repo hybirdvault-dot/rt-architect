@@ -1,0 +1,62 @@
+RTArchitect — Third-Party Notices
+=================================
+
+RTArchitect is MIT licensed. It depends on the following open-source packages,
+each of which remains under its own license. This file exists to make those
+licenses easy to find; it does not modify them.
+
+Runtime dependencies
+--------------------
+
+pydantic
+  License: MIT
+  https://github.com/pydantic/pydantic
+
+networkx
+  License: BSD 3-Clause
+  https://networkx.org/
+
+Jinja2
+  License: BSD 3-Clause
+  https://palletsprojects.com/p/jinja/
+
+Typer
+  License: MIT
+  https://github.com/fastapi/typer
+
+Rich
+  License: MIT
+  https://github.com/Textualize/rich
+
+click (transitive, via Typer)
+  License: BSD 3-Clause
+  https://github.com/pallets/click
+
+openai (optional, only for `--ai`)
+  License: MIT
+  https://github.com/openai/openai-python
+
+Development dependencies
+------------------------
+
+pytest
+  License: MIT
+  https://github.com/pytest-dev/pytest
+
+Target-side libraries
+---------------------
+
+QNX® Neutrino® RTOS and the QNX Software Development Platform are trademarks of
+BlackBerry Limited. RTArchitect is an independent project and is not
+affiliated with, endorsed by, or sponsored by BlackBerry Limited or QNX.
+
+The demo services are built against the QNX SDP and link `libslog2` and
+`libpthread` from that SDK. Those components are governed by the QNX SDP
+license agreement, not by the MIT license of this repository.
+
+Build tooling
+-------------
+
+GNU Make, GCC (host simulation only) and QEMU.
+  QEMU is licensed under the GNU General Public License, version 2.
+  https://www.qemu.org/

@@ -1,0 +1,19 @@
+{
+  "scenario": "medical_pump",
+  "target": "QNX 8.0 QEMU",
+  "deadline_ms": 2.0,
+  "critical_path": [
+    "sensor_service",
+    "pump_controller",
+    "alarm_service"
+  ],
+  "thresholds": {
+    "max_in_degree": 3,
+    "processing_deadline_fraction": 0.4,
+    "low_priority_work_ratio": 0.3,
+    "queue_wait_ratio": 0.4,
+    "spof_min_in_degree": 2,
+    "priority_threshold": 20,
+    "blocked_queue_wait_ratio": 0.2
+  }
+}

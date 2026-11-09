@@ -26,14 +26,16 @@ optional later layer — the tool never depends on it.
 - [x] Deterministic 5-rule engine, ordered and deduplicated
 - [x] Self-contained HTML report with a static SVG service graph
 - [x] Typer + Rich CLI
-- [x] `pytest` suite — 28 tests
+- [x] `pytest` suite — 50 tests
 - [x] QNX 8.0 target instrumentation (`rtarch_ipc.h`) — API verified against the QNX 8.0 library reference
 - [x] Five demo services with the flawed single-threaded `brake_controller`
 - [x] Fixed variant: `brake_controller_fixed` (two threads, two named channels)
 - [x] Host-side simulation that compiles the real C sources and runs the full pipeline
-- [ ] Real QNX 8.0 QEMU run — **blocked in this environment** (no QNX SDP, no QEMU, no sudo)
-- [ ] Optional AI explainer with 5 s timeout + deterministic fallback
-- [ ] Second scenario (medical pump)
+- [x] Second scenario (`medical_pump`) — same five rules, different topology
+- [x] Optional AI explainer + output validator (5 s bound, deterministic fallback)
+- [x] QNX prep scripts: QEMU boot, export dry-run, end-to-end smoke test
+- [x] Devpost draft, third-party notices, contributing guide
+- [ ] Real QNX 8.0 QEMU run — **blocked** (awaiting QNX SDP installer + QEMU BSP + licence)
 
 ---
 
@@ -68,8 +70,23 @@ Options:
   --scenario, -s   Scenario config JSON (thresholds, deadline, critical path).
                    [default: scenarios/brake_demo.json]
   --output, -o     Output HTML report path. [default: report.html]
+  --ai             Add optional AI explanations. Requires API_BASE_URL and
+                   API_KEY; falls back to deterministic templates on failure.
   --help           Show this message and exit.
 ```
+
+The AI layer is optional and never required. Without `API_BASE_URL` / `API_KEY`
+the tool behaves exactly as it did before the layer existed.
+
+### End-to-end smoke test
+
+```sh
+bash scripts/smoke_test_qnx.sh sim    # host simulation, works today
+bash scripts/smoke_test_qnx.sh qnx    # real QNX once the SDP + image arrive
+```
+
+The smoke test asserts that the flawed log produces at least one critical
+finding and that the fixed log clears `BOTTLENECK-001`.
 
 ---
 
@@ -241,8 +258,10 @@ rt-architect/
 │       └── report.html.j2   # Jinja2 report template
 ├── scenarios/               # Scenario configs (thresholds, deadline)
 ├── tests/                   # pytest suite + golden logs
-├── examples/                # Example logs and generated reports
-└── docs/                    # Architecture, schema, rules, trust model
+├── examples/                # example logs and generated reports
+├── scripts/                 # QEMU boot, export dry-run, smoke test
+└── docs/                    # architecture, schema, rules, trust model,
+                             #   verification, QNX setup, Devpost draft
 ```
 
 ---

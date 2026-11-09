@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTArchitect — medical_pump</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 32px 40px 20px;
+    border-bottom: 1px solid #21262d;
+    background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+  }
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    color: #f0883e;
+  }
+  .subtitle { margin: 4px 0 0; color: #8b949e; font-size: 14px; }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #8b949e;
+  }
+  .meta strong { color: #e6edf3; font-weight: 600; }
+  main { padding: 28px 40px 48px; max-width: 1200px; }
+  h2 {
+    font-size: 18px;
+    color: #58a6ff;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 8px;
+    margin: 36px 0 18px;
+  }
+  h3 { margin: 0 0 8px; font-size: 16px; }
+  h4 { margin: 14px 0 6px; font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 24px; }
+  .card {
+    flex: 1 1 140px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-align: center;
+  }
+  .card .number { display: block; font-size: 26px; font-weight: 700; }
+  .card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card.critical .number { color: #f85149; }
+  .card.warning .number { color: #d29922; }
+  .card.info .number { color: #58a6ff; }
+  .card.neutral .number { color: #e6edf3; }
+
+  .finding {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-left: 4px solid #8b949e;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+  }
+  .finding.critical { border-left-color: #f85149; }
+  .finding.warning { border-left-color: #d29922; }
+  .finding.info { border-left-color: #58a6ff; }
+  .finding-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+  }
+  .badge.critical { color: #f85149; }
+  .badge.warning { color: #d29922; }
+  .badge.info { color: #58a6ff; }
+  .rule { font-family: ui-monospace, monospace; font-size: 12px; color: #8b949e; }
+  .fid { margin-left: auto; font-family: ui-monospace, monospace; font-size: 12px; color: #6e7681; }
+  .condition { margin: 6px 0 0; font-size: 13px; color: #8b949e; }
+  .condition code { font-family: ui-monospace, monospace; color: #79c0ff; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .grid table { width: 100%; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #30363d; padding: 7px 10px; text-align: left; }
+  th { background: #21262d; color: #e6edf3; font-weight: 600; }
+  td { color: #c9d1d9; }
+  td:first-child { color: #e6edf3; }
+  ul.evidence { margin: 4px 0 0; padding-left: 20px; color: #79c0ff; font-size: 13px; }
+  ul.evidence li { margin: 3px 0; }
+  .recommendation { margin: 12px 0 0; font-size: 13px; color: #a5d6a7; }
+  .ai {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-left: 3px solid #a371f7;
+    background: #161b22;
+    color: #d2a8ff;
+    font-size: 13px;
+    font-style: italic;
+  }
+  .clean {
+    background: #161b22;
+    border: 1px solid #238636;
+    border-radius: 10px;
+    padding: 22px;
+  }
+  .clean .ok { color: #3fb950; font-weight: 600; margin: 0; }
+
+  .graph {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+  .node rect { fill: #161b22; stroke: #30363d; stroke-width: 1.5; }
+  .node text { fill: #e6edf3; font-size: 12px; font-family: ui-monospace, monospace; }
+  .node.critical rect { stroke: #d29922; stroke-width: 2.5; }
+  .node.has-finding rect { stroke: #f85149; stroke-width: 2.5; }
+  .edge-label {
+    fill: #8b949e;
+    font-size: 10px;
+    font-family: ui-monospace, monospace;
+    paint-order: stroke;
+    stroke: #0d1117;
+    stroke-width: 3px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: 12px; color: #8b949e; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .swatch.critical { border: 2px solid #d29922; }
+  .swatch.has-finding { border: 2px solid #f85149; }
+
+  footer {
+    padding: 20px 40px;
+    border-top: 1px solid #21262d;
+    color: #6e7681;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>RTArchitect</h1>
+  <p class="subtitle">Deterministic-first QNX IPC architectural analysis</p>
+  <div class="meta">
+    <span>Scenario: <strong>medical_pump</strong></span>
+    <span>Target: <strong>QNX 8.0 QEMU</strong></span>
+    <span>Deadline: <strong>2.0 ms</strong></span>
+    <span>Generated: <strong>2026-11-09 11:27:17 UTC</strong></span>
+  </div>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="card critical"><span class="number">2</span><span class="label">Critical</span></div>
+    <div class="card warning"><span class="number">3</span><span class="label">Warning</span></div>
+    <div class="card info"><span class="number">0</span><span class="label">Info</span></div>
+    <div class="card neutral"><span class="number">6</span><span class="label">Services</span></div>
+    <div class="card neutral"><span class="number">5</span><span class="label">IPC Edges</span></div>
+  </div>
+
+  <h2>Findings</h2>
+  
+    
+    <article class="finding critical">
+      <div class="finding-head">
+        <span class="badge critical">critical</span>
+        <span class="rule">BOTTLENECK-001</span>
+        <span class="fid">F-001</span>
+      </div>
+      <h3>pump_controller is an architectural bottleneck</h3>
+      <p class="condition"><strong>Condition:</strong> <code>in_degree &gt; 3 AND p95_processing_ns &gt; deadline_ns * 0.4</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>in_degree</td><td>4</td></tr>
+            
+            <tr><td>p95_processing_ns</td><td>3000000</td></tr>
+            
+            <tr><td>p95_processing_ms</td><td>3.0</td></tr>
+            
+            <tr><td>deadline_ms</td><td>2.0</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>max_in_degree</td><td>3</td></tr>
+            
+            <tr><td>processing_deadline_fraction</td><td>0.4</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>pump_controller has in-degree 4 (&gt;3)</li><li>pump_controller p95 processing time is 3.00 ms</li><li>the deadline is 2.00 ms</li><li>processing exceeds 40% of the deadline</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Split the service into fast-path and slow-path handlers, or separate high-priority control traffic from low-priority telemetry traffic.</p>
+      
+    </article>
+    
+    <article class="finding critical">
+      <div class="finding-head">
+        <span class="badge critical">critical</span>
+        <span class="rule">CRITICAL-PATH-001</span>
+        <span class="fid">F-002</span>
+      </div>
+      <h3>pump_controller violates the critical path deadline</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_processing_ns &gt; deadline_ns</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_processing_ns</td><td>3000000</td></tr>
+            
+            <tr><td>p95_processing_ms</td><td>3.0</td></tr>
+            
+            <tr><td>deadline_ns</td><td>2000000</td></tr>
+            
+            <tr><td>deadline_ms</td><td>2.0</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>deadline_ns</td><td>2000000</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>pump_controller p95 processing time is 3.00 ms</li><li>the critical path deadline is 2.00 ms</li><li>processing time exceeds the deadline</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">HEAD-OF-LINE-001</span>
+        <span class="fid">F-003</span>
+      </div>
+      <h3>pump_controller has head-of-line blocking</h3>
+      <p class="condition"><strong>Condition:</strong> <code>high_priority_blocked_count &gt; 0 AND low_priority_work_ratio &gt; 0.3</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>high_priority_blocked_count</td><td>1</td></tr>
+            
+            <tr><td>low_priority_work_ratio</td><td>0.75</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>low_priority_work_ratio</td><td>0.3</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>pump_controller blocked 1 high-priority request(s)</li><li>low-priority work is 75.0% of received traffic (threshold 30%)</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Use a priority-based message queue or separate channels so low-priority traffic cannot starve high-priority requests.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="fid">F-004</span>
+      </div>
+      <h3>Queue wait dominates on logging_client -&gt; pump_controller</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.4</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_queue_wait_ns</td><td>3000000</td></tr>
+            
+            <tr><td>p95_queue_wait_ms</td><td>3.0</td></tr>
+            
+            <tr><td>p95_total_ns</td><td>3500000</td></tr>
+            
+            <tr><td>p95_total_ms</td><td>3.5</td></tr>
+            
+            <tr><td>ratio</td><td>0.8571</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>queue_wait_ratio</td><td>0.4</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>p95 queue wait is 3.00 ms</li><li>p95 total latency is 3.50 ms</li><li>queue wait is 85.7% of total latency</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">SPOF-001</span>
+        <span class="fid">F-005</span>
+      </div>
+      <h3>pump_controller is a single point of failure</h3>
+      <p class="condition"><strong>Condition:</strong> <code>on_critical_path AND in_degree &gt; 2</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>in_degree</td><td>4</td></tr>
+            
+            <tr><td>on_critical_path</td><td>True</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>spof_min_in_degree</td><td>2</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>pump_controller is on the critical path</li><li>pump_controller has in-degree 4</li><li>if this node fails, the critical path fails</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Add redundancy or failover for this service, or distribute its responsibility across independent services.</p>
+      
+    </article>
+    
+  
+
+  
+  <h2>Service Interaction Graph</h2>
+  <div class="graph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 984 510" width="100%" role="img" aria-label="Service interaction graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/></marker></defs><rect x="0" y="0" width="984" height="510" fill="#0d1117"/><line x1="216.0" y1="347.0" x2="288.0" y2="209.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="273.0" text-anchor="middle" class="edge-label">FLOW_READING</text><line x1="456.0" y1="209.0" x2="528.0" y2="209.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="492.0" y="204.0" text-anchor="middle" class="edge-label">DOSE_CMD</text><line x1="216.0" y1="255.0" x2="288.0" y2="209.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="227.0" text-anchor="middle" class="edge-label">LOG_REQ</text><line x1="216.0" y1="163.0" x2="288.0" y2="209.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="181.0" text-anchor="middle" class="edge-label">CONFIG_REQ</text><line x1="216.0" y1="71.0" x2="288.0" y2="209.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="135.0" text-anchor="middle" class="edge-label">CALIB_REQ</text><g class="node" transform="translate(48.0,48.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">calibration_client</text></g><g class="node" transform="translate(48.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">config_client</text></g><g class="node" transform="translate(48.0,232.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">logging_client</text></g><g class="node critical" transform="translate(48.0,324.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">sensor_service</text></g><g class="node critical has-finding" transform="translate(288.0,186.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">pump_controller</text></g><g class="node critical" transform="translate(528.0,186.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">alarm_service</text></g></svg></div>
+  <div class="legend">
+    <span><span class="swatch critical"></span> On critical path</span>
+    <span><span class="swatch has-finding"></span> Has a finding</span>
+    <span>Edge label = message type</span>
+  </div>
+  
+
+  <h2>Node Metrics</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th><th>In-degree</th><th>Out-degree</th>
+        <th>P95 processing (ms)</th><th>Messages received</th>
+        <th>Critical path</th><th>High-prio blocked</th><th>Low-prio ratio</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>alarm_service</td>
+        <td>1</td>
+        <td>0</td>
+        <td>2.000</td>
+        <td>1</td>
+        <td>yes</td>
+        <td>0</td>
+        <td>0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>calibration_client</td>
+        <td>0</td>
+        <td>1</td>
+        <td>0.000</td>
+        <td>0</td>
+        <td>no</td>
+        <td>0</td>
+        <td>0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>config_client</td>
+        <td>0</td>
+        <td>1</td>
+        <td>0.000</td>
+        <td>0</td>
+        <td>no</td>
+        <td>0</td>
+        <td>0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>logging_client</td>
+        <td>0</td>
+        <td>1</td>
+        <td>0.000</td>
+        <td>0</td>
+        <td>no</td>
+        <td>0</td>
+        <td>0.0%</td>
+      </tr>
+      
+      <tr>
+        <td>pump_controller</td>
+        <td>4</td>
+        <td>1</td>
+        <td>3.000</td>
+        <td>4</td>
+        <td>yes</td>
+        <td>1</td>
+        <td>75.0%</td>
+      </tr>
+      
+      <tr>
+        <td>sensor_service</td>
+        <td>0</td>
+        <td>1</td>
+        <td>0.000</td>
+        <td>0</td>
+        <td>yes</td>
+        <td>0</td>
+        <td>0.0%</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>Edge Metrics</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Edge</th><th>Message type</th><th>Count</th>
+        <th>P50 queue (ms)</th><th>P95 queue (ms)</th>
+        <th>P95 processing (ms)</th><th>P95 total (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>calibration_client &rarr; pump_controller</td>
+        <td>CALIB_REQ</td>
+        <td>1</td>
+        <td>0.500</td>
+        <td>0.500</td>
+        <td>0.500</td>
+        <td>1.000</td>
+      </tr>
+      
+      <tr>
+        <td>config_client &rarr; pump_controller</td>
+        <td>CONFIG_REQ</td>
+        <td>1</td>
+        <td>1.000</td>
+        <td>1.000</td>
+        <td>0.500</td>
+        <td>1.500</td>
+      </tr>
+      
+      <tr>
+        <td>logging_client &rarr; pump_controller</td>
+        <td>LOG_REQ</td>
+        <td>1</td>
+        <td>3.000</td>
+        <td>3.000</td>
+        <td>0.500</td>
+        <td>3.500</td>
+      </tr>
+      
+      <tr>
+        <td>pump_controller &rarr; alarm_service</td>
+        <td>DOSE_CMD</td>
+        <td>1</td>
+        <td>0.200</td>
+        <td>0.200</td>
+        <td>2.000</td>
+        <td>2.200</td>
+      </tr>
+      
+      <tr>
+        <td>sensor_service &rarr; pump_controller</td>
+        <td>FLOW_READING</td>
+        <td>1</td>
+        <td>1.000</td>
+        <td>1.000</td>
+        <td>3.000</td>
+        <td>4.000</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</main>
+
+<footer>
+  <p>RTArchitect &mdash; deterministic-first QNX IPC analysis. Every finding is evidence-backed and rule-generated.
+  AI explanation is optional and never required for the deterministic core.</p>
+</footer>
+</body>
+</html>

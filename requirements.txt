@@ -3,3 +3,6 @@ networkx>=3
 typer>=0.9
 rich>=13
 jinja2>=3
+
+# Optional, only needed for --ai (any OpenAI-compatible provider)
+# openai>=1.0

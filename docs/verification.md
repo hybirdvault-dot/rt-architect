@@ -6,18 +6,24 @@
 .venv/bin/python -m pytest
 ```
 
-28 tests cover:
+50 tests cover:
 
 - **Parser** — golden log parsing, field values, `RTARCH` pre-filter, malformed
   line skipping, empty files, and tolerance of real slog2 line prefixes.
 - **Metrics** — queue wait / processing / total calculations, message types,
   node in-degree, and the Rule-3 inputs (high-priority blocked count,
   low-priority work ratio).
-- **Rules** — all five rules fire on the flawed log, the fixed log produces zero
-  findings, ordering and deduplication, and every finding is evidence-backed.
+- **Rules** — all five rules fire on the flawed log, on the `medical_pump`
+  scenario (different topology, same engine), ordering and deduplication, and
+  every finding is evidence-backed.
+- **AI + validator** — output validation accepts a correct response and rejects
+  a wrong `finding_id`, an invented number and an unknown QNX API; the
+  deterministic fallback is used when the provider is unconfigured, raises,
+  returns invalid JSON, or exceeds the 5 s bound.
 - **Report** — HTML contains findings, the SVG graph, metric tables, and the
   clean-architecture message.
-- **CLI** — end-to-end invocation via Typer's `CliRunner`.
+- **CLI** — end-to-end invocation via Typer's `CliRunner`, with and without
+  `--ai`.
 
 ## Golden logs
 
@@ -25,6 +31,7 @@
 |---|---|
 | `tests/golden/synthetic_flawed.log` | Flawed single-threaded `brake_controller`; triggers all five rules |
 | `tests/golden/synthetic_fixed.log` | Split fast/slow handlers; triggers nothing |
+| `tests/golden/synthetic_pump.log` | `medical_pump` scenario: same five rules, different topology |
 
 ## Manual end-to-end check
 

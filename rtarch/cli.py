@@ -34,6 +34,14 @@ def analyze(
         "-o",
         help="Output HTML report path.",
     ),
+    ai: bool = typer.Option(
+        False,
+        "--ai",
+        help=(
+            "Add optional AI explanations. Requires API_BASE_URL and API_KEY. "
+            "Falls back to deterministic templates on any failure."
+        ),
+    ),
 ) -> None:
     """Analyze a QNX IPC log and generate a deterministic HTML report."""
     console.print(
@@ -106,6 +114,15 @@ def analyze(
         console.print(table)
     else:
         console.print("[green]No deterministic findings — architecture is clean.[/green]")
+
+    if ai:
+        from .ai import explain_findings
+
+        with console.status("[bold]Requesting AI explanations (5 s bound)...[/bold]"):
+            findings = explain_findings(findings, scenario, enabled=True)
+        console.print("[green]AI explanations added (deterministic fallback on failure).[/green]")
+    else:
+        console.print("[dim]AI disabled — deterministic findings only.[/dim]")
 
     written = generate_report(
         findings, node_metrics, edge_metrics, scenario, output, graph=graph

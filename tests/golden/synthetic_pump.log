@@ -1,0 +1,15 @@
+RTARCH v=1 ts_ns=1000000000 phase=SEND trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=pump_controller msg_type=FLOW_READING prio=25
+RTARCH v=1 ts_ns=1001000000 phase=RECV trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=pump_controller msg_type=FLOW_READING prio=25
+RTARCH v=1 ts_ns=1004000000 phase=REPLY trace_id=1001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=101 dst_name=sensor_service msg_type=FLOW_ACK prio=25
+RTARCH v=1 ts_ns=1004200000 phase=SEND trace_id=2001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=301 dst_name=alarm_service msg_type=DOSE_CMD prio=30
+RTARCH v=1 ts_ns=1004400000 phase=RECV trace_id=2001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=301 dst_name=alarm_service msg_type=DOSE_CMD prio=30
+RTARCH v=1 ts_ns=1006400000 phase=REPLY trace_id=2001 msg_id=1 src_pid=301 src_name=alarm_service dst_pid=201 dst_name=pump_controller msg_type=DOSE_ACK prio=30
+RTARCH v=1 ts_ns=1001000000 phase=SEND trace_id=3001 msg_id=1 src_pid=401 src_name=logging_client dst_pid=201 dst_name=pump_controller msg_type=LOG_REQ prio=10
+RTARCH v=1 ts_ns=1004000000 phase=RECV trace_id=3001 msg_id=1 src_pid=401 src_name=logging_client dst_pid=201 dst_name=pump_controller msg_type=LOG_REQ prio=10
+RTARCH v=1 ts_ns=1004500000 phase=REPLY trace_id=3001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=401 dst_name=logging_client msg_type=LOG_ACK prio=10
+RTARCH v=1 ts_ns=1002000000 phase=SEND trace_id=4001 msg_id=1 src_pid=501 src_name=config_client dst_pid=201 dst_name=pump_controller msg_type=CONFIG_REQ prio=10
+RTARCH v=1 ts_ns=1003000000 phase=RECV trace_id=4001 msg_id=1 src_pid=501 src_name=config_client dst_pid=201 dst_name=pump_controller msg_type=CONFIG_REQ prio=10
+RTARCH v=1 ts_ns=1003500000 phase=REPLY trace_id=4001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=501 dst_name=config_client msg_type=CONFIG_ACK prio=10
+RTARCH v=1 ts_ns=1002500000 phase=SEND trace_id=5001 msg_id=1 src_pid=601 src_name=calibration_client dst_pid=201 dst_name=pump_controller msg_type=CALIB_REQ prio=10
+RTARCH v=1 ts_ns=1003000000 phase=RECV trace_id=5001 msg_id=1 src_pid=601 src_name=calibration_client dst_pid=201 dst_name=pump_controller msg_type=CALIB_REQ prio=10
+RTARCH v=1 ts_ns=1003500000 phase=REPLY trace_id=5001 msg_id=1 src_pid=201 src_name=pump_controller dst_pid=601 dst_name=calibration_client msg_type=CALIB_ACK prio=10

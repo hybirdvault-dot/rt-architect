@@ -23,3 +23,4 @@ htmlcov/
 
 # Generated artifacts
 report.html
+examples/logs/smoke_*.log
