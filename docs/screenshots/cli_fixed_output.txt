@@ -1,0 +1,11 @@
+╭────────────────────────────────────────────────────╮
+│ RTArchitect — deterministic-first QNX IPC analysis │
+╰────────────────────────────────────────────────────╯
+Scenario: brake_demo_fixed
+Log file: tests/golden/synthetic_fixed.log
+Parsed 12 RTARCH events (0 malformed skipped)
+Graph: 6 services, 4 IPC edges
+Findings: 0 critical, 0 warning, 0 info
+No deterministic findings — architecture is clean.
+AI disabled — deterministic findings only.
+Report written to: /tmp/cli_fixed.html

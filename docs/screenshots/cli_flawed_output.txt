@@ -1,0 +1,23 @@
+╭────────────────────────────────────────────────────╮
+│ RTArchitect — deterministic-first QNX IPC analysis │
+╰────────────────────────────────────────────────────╯
+Scenario: brake_demo
+Log file: tests/golden/synthetic_flawed.log
+Parsed 12 RTARCH events (0 malformed skipped)
+Graph: 5 services, 4 IPC edges
+Findings: 2 critical, 3 warning, 0 info
+ ID     Severity  Rule               Node              Title                    
+ F-001  critical  BOTTLENECK-001     brake_controller  brake_controller is an   
+                                                       architectural bottleneck 
+ F-002  critical  CRITICAL-PATH-001  brake_controller  brake_controller         
+                                                       violates the critical    
+                                                       path deadline            
+ F-003  warning   HEAD-OF-LINE-001   brake_controller  brake_controller has     
+                                                       head-of-line blocking    
+ F-004  warning   QUEUE-WAIT-001     brake_controller  Queue wait dominates on  
+                                                       telemetry_client ->      
+                                                       brake_controller         
+ F-005  warning   SPOF-001           brake_controller  brake_controller is a    
+                                                       single point of failure  
+AI disabled — deterministic findings only.
+Report written to: /tmp/cli_flawed.html

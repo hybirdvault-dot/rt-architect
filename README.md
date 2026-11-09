@@ -130,6 +130,21 @@ and the pipeline, but it is **not** QNX evidence. See
 
 ---
 
+## Screenshots
+
+| Flawed report — 6 findings | Fixed report — clean |
+|---|---|
+| ![flawed report](docs/screenshots/flawed_report.png) | ![fixed report](docs/screenshots/fixed_report.png) |
+
+| Second scenario (`medical_pump`) | Service interaction graph |
+|---|---|
+| ![medical pump report](docs/screenshots/medical_pump_report.png) | ![service graph](docs/screenshots/service_graph.svg) |
+
+More captures live in [`docs/screenshots/`](docs/screenshots/), including the
+host-simulation reports, the CLI transcript for both runs, and the project tree.
+
+---
+
 ## Architecture
 
 ```
