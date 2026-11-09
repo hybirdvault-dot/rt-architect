@@ -85,7 +85,15 @@ Boot the guest and log in as `root` (no password on most QNX demo images).
 
 ## 4. Build and copy the demo
 
-On the host:
+On the host, one command installs the SDP and builds the demo:
+
+```sh
+bash scripts/setup_qnx_sdp.sh ~/Downloads/qnx800-linux-x86_64-*.run
+# or, if you installed it yourself:
+bash scripts/setup_qnx_sdp.sh --env-only
+```
+
+Equivalently, by hand:
 
 ```sh
 cd target/qnx8_demo
@@ -112,6 +120,16 @@ cd /tmp
 sh scripts/run_flawed_demo.sh     # starts services, runs 6 s, stops them
 sh scripts/extract_slog2.sh       # slog2info > /tmp/raw_slog2.txt
 ```
+
+The whole flow — boot, copy in, run both demos, extract, analyse, compare — is
+also scripted:
+
+```sh
+bash scripts/run_qnx_demo.sh ~/Downloads/qnx80-hdd.img
+```
+
+That script fails loudly at the one image-specific step (getting the binaries
+into the guest) instead of silently half-running.
 
 ## 6. Get the log onto the host
 
