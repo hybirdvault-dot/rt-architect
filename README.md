@@ -158,9 +158,13 @@ and the pipeline, but it is **not** QNX evidence. See
 |---|---|
 | ![flawed report](docs/screenshots/flawed_report.png) | ![fixed report](docs/screenshots/fixed_report.png) |
 
-| Second scenario (`medical_pump`) | Service interaction graph |
+| Second scenario (`medical_pump`) | Before / after comparison |
 |---|---|
-| ![medical pump report](docs/screenshots/medical_pump_report.png) | ![service graph](docs/screenshots/service_graph.svg) |
+| ![medical pump report](docs/screenshots/medical_pump_report.png) | ![comparison report](docs/screenshots/comparison_report.png) |
+
+| Service interaction graph |
+|---|
+| ![service graph](docs/screenshots/service_graph.svg) |
 
 More captures live in [`docs/screenshots/`](docs/screenshots/), including the
 host-simulation reports, the CLI transcript for both runs, and the project tree.
