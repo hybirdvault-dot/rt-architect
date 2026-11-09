@@ -1,0 +1,15 @@
+RTARCH v=1 ts_ns=1000000000 phase=SEND trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=kinematics_service msg_type=JOINT_FRAME prio=25
+RTARCH v=1 ts_ns=1000200000 phase=RECV trace_id=1001 msg_id=1 src_pid=101 src_name=sensor_service dst_pid=201 dst_name=kinematics_service msg_type=JOINT_FRAME prio=25
+RTARCH v=1 ts_ns=1000800000 phase=REPLY trace_id=1001 msg_id=1 src_pid=201 src_name=kinematics_service dst_pid=101 dst_name=sensor_service msg_type=JOINT_ACK prio=25
+RTARCH v=1 ts_ns=1000800000 phase=SEND trace_id=2001 msg_id=1 src_pid=201 src_name=kinematics_service dst_pid=301 dst_name=motor_controller msg_type=TORQUE_CMD prio=30
+RTARCH v=1 ts_ns=1001100000 phase=RECV trace_id=2001 msg_id=1 src_pid=201 src_name=kinematics_service dst_pid=301 dst_name=motor_controller msg_type=TORQUE_CMD prio=30
+RTARCH v=1 ts_ns=1002300000 phase=REPLY trace_id=2001 msg_id=1 src_pid=301 src_name=motor_controller dst_pid=201 dst_name=kinematics_service msg_type=TORQUE_ACK prio=30
+RTARCH v=1 ts_ns=1000500000 phase=SEND trace_id=3001 msg_id=1 src_pid=401 src_name=maintenance_client dst_pid=301 dst_name=motor_controller msg_type=MAINT_REQ prio=10
+RTARCH v=1 ts_ns=1001500000 phase=RECV trace_id=3001 msg_id=1 src_pid=401 src_name=maintenance_client dst_pid=301 dst_name=motor_controller msg_type=MAINT_REQ prio=10
+RTARCH v=1 ts_ns=1002000000 phase=REPLY trace_id=3001 msg_id=1 src_pid=301 src_name=motor_controller dst_pid=401 dst_name=maintenance_client msg_type=MAINT_ACK prio=10
+RTARCH v=1 ts_ns=1000600000 phase=SEND trace_id=4001 msg_id=1 src_pid=501 src_name=diagnostics_client dst_pid=301 dst_name=motor_controller msg_type=DIAG_REQ prio=10
+RTARCH v=1 ts_ns=1001600000 phase=RECV trace_id=4001 msg_id=1 src_pid=501 src_name=diagnostics_client dst_pid=301 dst_name=motor_controller msg_type=DIAG_REQ prio=10
+RTARCH v=1 ts_ns=1002100000 phase=REPLY trace_id=4001 msg_id=1 src_pid=301 src_name=motor_controller dst_pid=501 dst_name=diagnostics_client msg_type=DIAG_ACK prio=10
+RTARCH v=1 ts_ns=1000700000 phase=SEND trace_id=5001 msg_id=1 src_pid=601 src_name=calibration_client dst_pid=301 dst_name=motor_controller msg_type=CALIB_REQ prio=10
+RTARCH v=1 ts_ns=1001700000 phase=RECV trace_id=5001 msg_id=1 src_pid=601 src_name=calibration_client dst_pid=301 dst_name=motor_controller msg_type=CALIB_REQ prio=10
+RTARCH v=1 ts_ns=1002200000 phase=REPLY trace_id=5001 msg_id=1 src_pid=301 src_name=motor_controller dst_pid=601 dst_name=calibration_client msg_type=CALIB_ACK prio=10

@@ -13,9 +13,11 @@ GOLDEN_DIR = os.path.join(ROOT, "tests", "golden")
 FLAWED_LOG = os.path.join(GOLDEN_DIR, "synthetic_flawed.log")
 FIXED_LOG = os.path.join(GOLDEN_DIR, "synthetic_fixed.log")
 PUMP_LOG = os.path.join(GOLDEN_DIR, "synthetic_pump.log")
+ROBOT_LOG = os.path.join(GOLDEN_DIR, "synthetic_robot.log")
 FLAWED_SCENARIO = os.path.join(ROOT, "scenarios", "brake_demo.json")
 FIXED_SCENARIO = os.path.join(ROOT, "scenarios", "brake_demo_fixed.json")
 PUMP_SCENARIO = os.path.join(ROOT, "scenarios", "medical_pump.json")
+ROBOT_SCENARIO = os.path.join(ROOT, "scenarios", "industrial_robot.json")
 
 SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
@@ -113,3 +115,36 @@ def test_two_scenarios_produce_different_topologies():
     assert {f.node for f in pump} != {f.node for f in brake}
     assert "pump_controller" in {f.node for f in pump}
     assert "brake_controller" in {f.node for f in brake}
+
+
+# --- third scenario: industrial_robot ----------------------------------
+
+
+def test_industrial_robot_fires_all_five_rules():
+    findings, _, _ = _run(ROBOT_LOG, ROBOT_SCENARIO)
+    assert {f.rule_id for f in findings} == {
+        "CRITICAL-PATH-001",
+        "BOTTLENECK-001",
+        "HEAD-OF-LINE-001",
+        "QUEUE-WAIT-001",
+        "SPOF-001",
+    }
+
+
+def test_industrial_robot_uses_a_tighter_deadline():
+    """The same engine with a 1 ms deadline instead of 5 ms / 2 ms."""
+    findings, _, _ = _run(ROBOT_LOG, ROBOT_SCENARIO)
+    assert all(f.node == "motor_controller" for f in findings)
+    assert any(f.rule_id == "CRITICAL-PATH-001" for f in findings)
+
+
+def test_three_scenarios_share_no_hardcoded_service_names():
+    brake, _, _ = _run(FLAWED_LOG, FLAWED_SCENARIO)
+    pump, _, _ = _run(PUMP_LOG, PUMP_SCENARIO)
+    robot, _, _ = _run(ROBOT_LOG, ROBOT_SCENARIO)
+    brake_nodes = {f.node for f in brake}
+    pump_nodes = {f.node for f in pump}
+    robot_nodes = {f.node for f in robot}
+    assert brake_nodes.isdisjoint(pump_nodes)
+    assert pump_nodes.isdisjoint(robot_nodes)
+    assert brake_nodes.isdisjoint(robot_nodes)

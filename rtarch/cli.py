@@ -19,6 +19,16 @@ app = typer.Typer(
 console = Console()
 
 
+@app.callback()
+def _main() -> None:
+    """RTArchitect — deterministic-first QNX IPC architectural analysis.
+
+    Commands:
+      analyze   analyse one log and write an HTML report
+      compare   put two logs side by side (flawed vs fixed)
+    """
+
+
 @app.command()
 def analyze(
     log_file: str = typer.Argument(..., help="Path to a raw slog2 log file."),
@@ -128,6 +138,65 @@ def analyze(
         findings, node_metrics, edge_metrics, scenario, output, graph=graph
     )
     console.print(f"[bold green]Report written to:[/bold green] {written}")
+
+
+@app.command()
+def compare(
+    flawed_log: str = typer.Argument(..., help="Log from the flawed architecture."),
+    fixed_log: str = typer.Argument(..., help="Log from the fixed architecture."),
+    scenario_file: str = typer.Option(
+        "scenarios/brake_demo.json",
+        "--scenario",
+        "-s",
+        help="Scenario config JSON (thresholds, deadline, critical path).",
+    ),
+    output: str = typer.Option(
+        "comparison.html",
+        "--output",
+        "-o",
+        help="Output HTML comparison path.",
+    ),
+) -> None:
+    """Compare two logs side by side: flawed architecture vs fixed."""
+    console.print(
+        Panel.fit(
+            "[bold orange1]RTArchitect[/bold orange1] — architecture comparison",
+            border_style="orange1",
+        )
+    )
+
+    try:
+        scenario = load_scenario(scenario_file)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Failed to load scenario:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    console.print(f"Scenario: [cyan]{scenario['scenario']}[/cyan]")
+    console.print(f"Flawed:   [red]{flawed_log}[/red]")
+    console.print(f"Fixed:    [green]{fixed_log}[/green]")
+
+    try:
+        from .compare import analyze_log, generate_comparison_report
+
+        flawed = analyze_log(flawed_log, scenario)
+        fixed = analyze_log(fixed_log, scenario)
+    except OSError as exc:
+        console.print(f"[red]Failed to read a log file:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"Findings: [red]{len(flawed['findings'])} before[/red] "
+        f"({flawed['critical']} critical) -> "
+        f"[green]{len(fixed['findings'])} after[/green] "
+        f"({fixed['critical']} critical)"
+    )
+
+    cleared = len(flawed["findings"]) - len(fixed["findings"])
+    if cleared > 0:
+        console.print(f"[green]{cleared} finding(s) cleared by the fix.[/green]")
+
+    written = generate_comparison_report(flawed_log, fixed_log, scenario, output)
+    console.print(f"[bold green]Comparison written to:[/bold green] {written}")
 
 
 if __name__ == "__main__":

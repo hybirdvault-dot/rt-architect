@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTArchitect — Architecture Comparison</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0d1117; color: #e6edf3;
+         font-family: "Segoe UI", system-ui, -apple-system, sans-serif; line-height: 1.5; }
+  header { padding: 28px 40px 18px; border-bottom: 1px solid #21262d;
+           background: linear-gradient(180deg, #161b22 0%, #0d1117 100%); }
+  h1 { margin: 0; font-size: 26px; color: #f0883e; }
+  .subtitle { margin: 4px 0 0; color: #8b949e; font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 14px;
+          font-size: 13px; color: #8b949e; }
+  .meta strong { color: #e6edf3; }
+  main { padding: 26px 40px 48px; max-width: 1240px; }
+  h2 { font-size: 18px; color: #58a6ff; border-bottom: 1px solid #21262d;
+       padding-bottom: 8px; margin: 34px 0 16px; }
+  h3 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+       letter-spacing: 0.5px; margin: 22px 0 10px; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 20px; }
+  .card { flex: 1 1 150px; background: #161b22; border: 1px solid #30363d;
+          border-radius: 10px; padding: 16px 18px; text-align: center; }
+  .card .number { display: block; font-size: 24px; font-weight: 700; }
+  .card .label { font-size: 12px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: 0.5px; }
+  .card.critical .number { color: #f85149; }
+  .card.warning .number { color: #d29922; }
+  .card.cleared { border-color: #238636; }
+  .card.cleared .number { color: #3fb950; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #30363d; padding: 7px 10px; text-align: left; }
+  th { background: #21262d; color: #e6edf3; font-weight: 600; }
+  td { color: #c9d1d9; }
+  td.num { text-align: right; font-family: ui-monospace, monospace; }
+
+  .before { color: #f85149; }
+  .after { color: #3fb950; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 20px;
+          font-size: 11px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.5px; border: 1px solid currentColor; }
+  .pill.cleared { color: #3fb950; }
+  .pill.still { color: #d29922; }
+  .pill.new { color: #f85149; }
+  .sev-critical { color: #f85149; }
+  .sev-warning { color: #d29922; }
+  .sev-info { color: #58a6ff; }
+  .delta-good { color: #3fb950; font-weight: 600; }
+  .delta-bad { color: #f85149; font-weight: 600; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+           padding: 14px 16px; }
+  .panel h3 { margin-top: 0; }
+  .panel.before { border-top: 3px solid #f85149; }
+  .panel.after { border-top: 3px solid #3fb950; }
+  .panel table { font-size: 12px; }
+  .panel th, .panel td { padding: 5px 7px; }
+
+  footer { padding: 20px 40px; border-top: 1px solid #21262d;
+           color: #6e7681; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>RTArchitect — Architecture Comparison</h1>
+  <p class="subtitle">Same tool, same scenario, two architectures</p>
+  <div class="meta">
+    <span>Scenario: <strong>brake_demo</strong></span>
+    <span>Deadline: <strong>5.0 ms</strong></span>
+    <span>Flawed log: <strong>12 events</strong></span>
+    <span>Fixed log: <strong>12 events</strong></span>
+  </div>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="card critical">
+      <span class="number">2</span>
+      <span class="label">Critical before</span>
+    </div>
+    <div class="card critical">
+      <span class="number">0</span>
+      <span class="label">Critical after</span>
+    </div>
+    <div class="card warning">
+      <span class="number">3</span>
+      <span class="label">Warnings before</span>
+    </div>
+    <div class="card warning">
+      <span class="number">0</span>
+      <span class="label">Warnings after</span>
+    </div>
+    <div class="card cleared">
+      <span class="number">5</span>
+      <span class="label">Findings cleared</span>
+    </div>
+  </div>
+
+  <h2>Finding diff</h2>
+  <table>
+    <thead>
+      <tr><th>Rule</th><th>Node</th><th>Severity</th><th>Change</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>BOTTLENECK-001</td>
+        <td>brake_controller</td>
+        <td class="sev-critical">critical</td>
+        <td><span class="pill cleared">cleared</span></td>
+      </tr>
+      
+      <tr>
+        <td>CRITICAL-PATH-001</td>
+        <td>brake_controller</td>
+        <td class="sev-critical">critical</td>
+        <td><span class="pill cleared">cleared</span></td>
+      </tr>
+      
+      <tr>
+        <td>HEAD-OF-LINE-001</td>
+        <td>brake_controller</td>
+        <td class="sev-warning">warning</td>
+        <td><span class="pill cleared">cleared</span></td>
+      </tr>
+      
+      <tr>
+        <td>QUEUE-WAIT-001</td>
+        <td>brake_controller</td>
+        <td class="sev-warning">warning</td>
+        <td><span class="pill cleared">cleared</span></td>
+      </tr>
+      
+      <tr>
+        <td>SPOF-001</td>
+        <td>brake_controller</td>
+        <td class="sev-warning">warning</td>
+        <td><span class="pill cleared">cleared</span></td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>Node metrics — p95 processing and fan-in</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>P95 before (ms)</th><th>P95 after (ms)</th><th>&Delta; (ms)</th>
+        <th>In-degree before</th><th>In-degree after</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>brake_controller</td>
+        <td class="num before">7.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+        <td class="num">3</td>
+        <td class="num">-</td>
+      </tr>
+      
+      <tr>
+        <td>brake_controller_fast</td>
+        <td class="num before">-</td>
+        <td class="num after">2.000</td>
+        <td class="num delta-bad">-</td>
+        <td class="num">-</td>
+        <td class="num">1</td>
+      </tr>
+      
+      <tr>
+        <td>brake_controller_slow</td>
+        <td class="num before">-</td>
+        <td class="num after">1.000</td>
+        <td class="num delta-bad">-</td>
+        <td class="num">-</td>
+        <td class="num">2</td>
+      </tr>
+      
+      <tr>
+        <td>diagnostics_client</td>
+        <td class="num before">0.000</td>
+        <td class="num after">0.000</td>
+        <td class="num delta-bad">0</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+      </tr>
+      
+      <tr>
+        <td>perception_service</td>
+        <td class="num before">2.000</td>
+        <td class="num after">2.000</td>
+        <td class="num delta-bad">0</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+      </tr>
+      
+      <tr>
+        <td>sensor_service</td>
+        <td class="num before">0.000</td>
+        <td class="num after">0.000</td>
+        <td class="num delta-bad">0</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+      </tr>
+      
+      <tr>
+        <td>telemetry_client</td>
+        <td class="num before">0.000</td>
+        <td class="num after">0.000</td>
+        <td class="num delta-bad">0</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>Edge metrics — where the latency went</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Edge</th>
+        <th>Queue wait before (ms)</th><th>Queue wait after (ms)</th><th>&Delta; (ms)</th>
+        <th>P95 proc before (ms)</th><th>P95 proc after (ms)</th><th>&Delta; (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>diagnostics_client-&gt;brake_controller</td>
+        <td class="num before">1.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">1.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+      <tr>
+        <td>diagnostics_client-&gt;brake_controller_slow</td>
+        <td class="num before">-</td>
+        <td class="num after">0.500</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">-</td>
+        <td class="num after">1.000</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+      <tr>
+        <td>perception_service-&gt;brake_controller</td>
+        <td class="num before">2.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">7.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+      <tr>
+        <td>perception_service-&gt;brake_controller_fast</td>
+        <td class="num before">-</td>
+        <td class="num after">0.200</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">-</td>
+        <td class="num after">2.000</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+      <tr>
+        <td>sensor_service-&gt;perception_service</td>
+        <td class="num before">0.500</td>
+        <td class="num after">0.500</td>
+        <td class="num delta-bad">0</td>
+        <td class="num before">2.000</td>
+        <td class="num after">2.000</td>
+        <td class="num delta-bad">0</td>
+      </tr>
+      
+      <tr>
+        <td>telemetry_client-&gt;brake_controller</td>
+        <td class="num before">3.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">1.000</td>
+        <td class="num after">-</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+      <tr>
+        <td>telemetry_client-&gt;brake_controller_slow</td>
+        <td class="num before">-</td>
+        <td class="num after">0.500</td>
+        <td class="num delta-bad">-</td>
+        <td class="num before">-</td>
+        <td class="num after">1.000</td>
+        <td class="num delta-bad">-</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>Findings side by side</h2>
+  <div class="two-col">
+    <div class="panel before">
+      <h3>Before — 5 findings</h3>
+      <table>
+        <thead><tr><th>ID</th><th>Rule</th><th>Severity</th></tr></thead>
+        <tbody>
+          
+          <tr><td>F-001</td><td>BOTTLENECK-001</td>
+              <td class="sev-critical">critical</td></tr>
+          
+          <tr><td>F-002</td><td>CRITICAL-PATH-001</td>
+              <td class="sev-critical">critical</td></tr>
+          
+          <tr><td>F-003</td><td>HEAD-OF-LINE-001</td>
+              <td class="sev-warning">warning</td></tr>
+          
+          <tr><td>F-004</td><td>QUEUE-WAIT-001</td>
+              <td class="sev-warning">warning</td></tr>
+          
+          <tr><td>F-005</td><td>SPOF-001</td>
+              <td class="sev-warning">warning</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+    <div class="panel after">
+      <h3>After — 0 findings</h3>
+      <table>
+        <thead><tr><th>ID</th><th>Rule</th><th>Severity</th></tr></thead>
+        <tbody>
+          
+          <tr><td colspan="3">No findings — architecture is clean.</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>RTArchitect &mdash; deterministic-first QNX IPC analysis. Every number in
+  this report comes from the rule engine; none is hand-entered.</p>
+</footer>
+</body>
+</html>

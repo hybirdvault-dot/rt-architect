@@ -1,0 +1,19 @@
+{
+  "scenario": "industrial_robot",
+  "target": "QNX 8.0 QEMU",
+  "deadline_ms": 1.0,
+  "critical_path": [
+    "sensor_service",
+    "kinematics_service",
+    "motor_controller"
+  ],
+  "thresholds": {
+    "max_in_degree": 3,
+    "processing_deadline_fraction": 0.4,
+    "low_priority_work_ratio": 0.3,
+    "queue_wait_ratio": 0.4,
+    "spof_min_in_degree": 2,
+    "priority_threshold": 20,
+    "blocked_queue_wait_ratio": 0.2
+  }
+}

@@ -1,5 +1,7 @@
 # RTArchitect
 
+[![CI](https://github.com/hybirdvault-dot/rt-architect/actions/workflows/ci.yml/badge.svg)](https://github.com/hybirdvault-dot/rt-architect/actions/workflows/ci.yml)
+
 **Deterministic-first QNX IPC architectural analysis.**
 
 RTArchitect instruments QNX message passing (`MsgSend` / `MsgReceive` /
@@ -26,7 +28,9 @@ optional later layer — the tool never depends on it.
 - [x] Deterministic 5-rule engine, ordered and deduplicated
 - [x] Self-contained HTML report with a static SVG service graph
 - [x] Typer + Rich CLI
-- [x] `pytest` suite — 50 tests
+- [x] `pytest` suite — 54 tests
+- [x] Three scenarios: `brake_demo` (5 ms), `medical_pump` (2 ms), `industrial_robot` (1 ms)
+- [x] Side-by-side comparison report (`rtarch compare`)
 - [x] QNX 8.0 target instrumentation (`rtarch_ipc.h`) — API verified against the QNX 8.0 library reference
 - [x] Five demo services with the flawed single-threaded `brake_controller`
 - [x] Fixed variant: `brake_controller_fixed` (two threads, two named channels)
@@ -61,19 +65,25 @@ Open the generated HTML report in a browser.
 ### CLI
 
 ```
-Usage: rtarch [OPTIONS] LOG_FILE
+Usage: rtarch [OPTIONS] COMMAND [ARGS]...
 
-Arguments:
-  LOG_FILE  Path to a raw slog2 log file. [required]
+Commands:
+  analyze   analyse one log and write an HTML report
+  compare   put two logs side by side (flawed vs fixed)
 
-Options:
+rtarch analyze [OPTIONS] LOG_FILE
   --scenario, -s   Scenario config JSON (thresholds, deadline, critical path).
                    [default: scenarios/brake_demo.json]
   --output, -o     Output HTML report path. [default: report.html]
   --ai             Add optional AI explanations. Requires API_BASE_URL and
                    API_KEY; falls back to deterministic templates on failure.
-  --help           Show this message and exit.
+
+rtarch compare [OPTIONS] FLAWED_LOG FIXED_LOG
+  --scenario, -s   Scenario config JSON. [default: scenarios/brake_demo.json]
+  --output, -o     Output HTML comparison path. [default: comparison.html]
 ```
+
+`python -m rtarch analyze …` works identically to the `rtarch` console script.
 
 The AI layer is optional and never required. Without `API_BASE_URL` / `API_KEY`
 the tool behaves exactly as it did before the layer existed.
@@ -87,6 +97,18 @@ bash scripts/smoke_test_qnx.sh qnx    # real QNX once the SDP + image arrive
 
 The smoke test asserts that the flawed log produces at least one critical
 finding and that the fixed log clears `BOTTLENECK-001`.
+
+### Before / after comparison
+
+```sh
+rtarch compare examples/logs/sim_flawed_slog2.txt \
+              examples/logs/sim_fixed_slog2.txt \
+              --scenario scenarios/brake_demo.json \
+              --output examples/reports/comparison.html
+```
+
+A two-column report: findings cleared, p95 deltas, queue-wait deltas, and the
+one finding that legitimately remains.
 
 ---
 
@@ -213,7 +235,13 @@ sequentially in display order (`F-001`, `F-002`, ...).
 ## Scenario configuration
 
 All thresholds live in scenario JSON — nothing about a specific service is
-hardcoded in the analysis logic.
+hardcoded in the analysis logic. Three scenarios ship in the repo:
+
+| Scenario | Deadline | Critical path | Proves |
+|---|---|---|---|
+| `brake_demo` | 5 ms | sensor → perception → brake | the demo |
+| `medical_pump` | 2 ms | sensor → pump → alarm | a different domain |
+| `industrial_robot` | 1 ms | sensor → kinematics → motor | a tighter deadline |
 
 ```json
 {

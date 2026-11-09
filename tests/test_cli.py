@@ -20,7 +20,7 @@ def test_cli_generates_flawed_report(tmp_path):
     out = tmp_path / "report.html"
     result = runner.invoke(
         app,
-        [FLAWED_LOG, "--scenario", FLAWED_SCENARIO, "--output", str(out)],
+        ["analyze", FLAWED_LOG, "--scenario", FLAWED_SCENARIO, "--output", str(out)],
     )
     assert result.exit_code == 0, result.output
     assert out.exists()
@@ -33,11 +33,32 @@ def test_cli_generates_clean_fixed_report(tmp_path):
     out = tmp_path / "fixed.html"
     result = runner.invoke(
         app,
-        [FIXED_LOG, "--scenario", FIXED_SCENARIO, "--output", str(out)],
+        ["analyze", FIXED_LOG, "--scenario", FIXED_SCENARIO, "--output", str(out)],
     )
     assert result.exit_code == 0, result.output
     html = out.read_text(encoding="utf-8")
     assert "No deterministic findings" in html
+
+
+def test_cli_compare_produces_comparison_report(tmp_path):
+    out = tmp_path / "comparison.html"
+    result = runner.invoke(
+        app,
+        [
+            "compare",
+            FLAWED_LOG,
+            FIXED_LOG,
+            "--scenario",
+            FLAWED_SCENARIO,
+            "--output",
+            str(out),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    html = out.read_text(encoding="utf-8")
+    assert "Architecture Comparison" in html
+    assert "BOTTLENECK-001" in html
+    assert "cleared" in html
 
 
 def test_cli_reports_malformed_lines(tmp_path):
@@ -50,7 +71,7 @@ def test_cli_reports_malformed_lines(tmp_path):
     out = tmp_path / "report.html"
     result = runner.invoke(
         app,
-        [str(noisy), "--scenario", FLAWED_SCENARIO, "--output", str(out)],
+        ["analyze", str(noisy), "--scenario", FLAWED_SCENARIO, "--output", str(out)],
     )
     assert result.exit_code == 0, result.output
     assert "1" in result.output
