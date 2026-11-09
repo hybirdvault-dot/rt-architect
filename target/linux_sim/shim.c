@@ -23,6 +23,8 @@
 #include <sys/slog2.h>
 #include <sys/neutrino.h>
 #include <sys/netmgr.h>
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
 
 /* ------------------------------------------------------------------ */
 /*  slog2                                                             */
@@ -50,11 +52,35 @@ int slog2_reset(void)
     return 0;
 }
 
+/*
+ * The real slog2 writes into a memory buffer that slog2info later dumps.  The
+ * simulation does exactly the same: events are appended to a large in-memory
+ * buffer and written out at exit.  This keeps file I/O out of the measured
+ * critical path, which matters because the analysis is timing-sensitive.
+ */
+#define SIM_LOG_BUFFER_SIZE (4 * 1024 * 1024)
+#define SIM_LOG_LINE_MAX    512
+
+static char _sim_log[SIM_LOG_BUFFER_SIZE];
+static size_t _sim_log_len = 0;
+
+void sim_flush_log(void)
+{
+    if (_sim_log_len > 0) {
+        fwrite(_sim_log, 1, _sim_log_len, stdout);
+        fflush(stdout);
+        _sim_log_len = 0;
+    }
+}
+
 int slog2f(slog2_buffer_t buffer, uint16_t code, uint8_t severity,
            const char *format, ...)
 {
     va_list ap;
     struct timespec ts;
+    char line[SIM_LOG_LINE_MAX];
+    size_t n = 0;
+    int written;
 
     (void)buffer;
     (void)code;
@@ -62,19 +88,40 @@ int slog2f(slog2_buffer_t buffer, uint16_t code, uint8_t severity,
 
     clock_gettime(CLOCK_REALTIME, &ts);
 
-    pthread_mutex_lock(&_slog_lock);
-    fprintf(stdout, "%02ld:%02ld:%02ld.%06ld %d %lu ",
-            (long)((ts.tv_sec / 3600) % 24),
-            (long)((ts.tv_sec / 60) % 60),
-            (long)(ts.tv_sec % 60),
-            (long)(ts.tv_nsec / 1000),
-            (int)getpid(),
-            (unsigned long)pthread_self());
+    written = snprintf(line, sizeof(line),
+                       "%02ld:%02ld:%02ld.%06ld %d %lu ",
+                       (long)((ts.tv_sec / 3600) % 24),
+                       (long)((ts.tv_sec / 60) % 60),
+                       (long)(ts.tv_sec % 60),
+                       (long)(ts.tv_nsec / 1000),
+                       (int)getpid(),
+                       (unsigned long)pthread_self());
+    if (written < 0) {
+        return 0;
+    }
+    n = (size_t)written;
+    if (n >= sizeof(line)) {
+        n = sizeof(line) - 1;
+    }
+
     va_start(ap, format);
-    vfprintf(stdout, format, ap);
+    written = vsnprintf(line + n, sizeof(line) - n, format, ap);
     va_end(ap);
-    fprintf(stdout, "\n");
-    fflush(stdout);
+    if (written < 0) {
+        return 0;
+    }
+    if (n + (size_t)written >= sizeof(line)) {
+        n = sizeof(line) - 1;
+    } else {
+        n += (size_t)written;
+    }
+    line[n++] = '\n';
+
+    pthread_mutex_lock(&_slog_lock);
+    if (_sim_log_len + n < sizeof(_sim_log)) {
+        memcpy(_sim_log + _sim_log_len, line, n);
+        _sim_log_len += n;
+    }
     pthread_mutex_unlock(&_slog_lock);
 
     return 0;
@@ -271,6 +318,22 @@ long MsgSend(int coid, const void *smsg, size_t sbytes,
     return (long)slot->status;
 }
 
+/*
+ * Brief pause used by the busy-poll below.
+ */
+static inline void _sim_relax(void)
+{
+#if defined(__x86_64__) || defined(__i386__)
+    __asm__ __volatile__("pause" ::: "memory");
+#elif defined(__aarch64__)
+    __asm__ __volatile__("yield" ::: "memory");
+#else
+    volatile unsigned int sink = 0;
+    sink++;
+    (void)sink;
+#endif
+}
+
 int MsgReceive(int chid, void *rmsg, size_t rbytes, struct _msg_info *info)
 {
     sim_channel_t *ch;
@@ -321,6 +384,85 @@ int MsgReceive(int chid, void *rmsg, size_t rbytes, struct _msg_info *info)
     pthread_mutex_unlock(&ch->lock);
 
     return rcvid;
+}
+
+/* ------------------------------------------------------------------ */
+/*  QNX name space (name_attach / name_open)                           */
+/* ------------------------------------------------------------------ */
+
+#define MAX_NAMES 16
+#define MAX_NAME_LEN 128
+
+static struct {
+    char name[MAX_NAME_LEN];
+    int chid;
+    int used;
+} _names[MAX_NAMES];
+static int _name_count = 0;
+static pthread_mutex_t _names_lock = PTHREAD_MUTEX_INITIALIZER;
+
+name_attach_t *name_attach(dispatch_t *dpp, const char *path, unsigned flags)
+{
+    name_attach_t *att;
+    int chid;
+    int slot;
+
+    (void)dpp;
+    (void)flags;
+
+    chid = ChannelCreate(0);
+    if (chid < 0) {
+        return NULL;
+    }
+
+    pthread_mutex_lock(&_names_lock);
+    if (_name_count >= MAX_NAMES) {
+        pthread_mutex_unlock(&_names_lock);
+        return NULL;
+    }
+    slot = _name_count++;
+    snprintf(_names[slot].name, sizeof(_names[slot].name), "%s", path);
+    _names[slot].chid = chid;
+    _names[slot].used = 1;
+    pthread_mutex_unlock(&_names_lock);
+
+    att = malloc(sizeof(*att));
+    if (att == NULL) {
+        return NULL;
+    }
+    att->dpp = NULL;
+    att->chid = chid;
+    att->mntid = 0;
+    att->zero[0] = 0;
+    att->zero[1] = 0;
+
+    return att;
+}
+
+int name_open(const char *name, int flags)
+{
+    int coid = -1;
+    int i;
+
+    (void)flags;
+
+    pthread_mutex_lock(&_names_lock);
+    for (i = 0; i < _name_count; i++) {
+        if (_names[i].used && strcmp(_names[i].name, name) == 0) {
+            coid = _names[i].chid;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&_names_lock);
+
+    return coid;
+}
+
+int name_detach(name_attach_t *attach, unsigned flags)
+{
+    (void)attach;
+    (void)flags;
+    return 0;
 }
 
 int MsgReply(int rcvid, int status, const void *rmsg, size_t rbytes)

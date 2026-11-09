@@ -53,4 +53,7 @@ int slog2_reset(void);
 int slog2f(slog2_buffer_t buffer, uint16_t code, uint8_t severity,
            const char *format, ...);
 
+/* Simulation only: dump the accumulated slog2 memory buffer to stdout. */
+void sim_flush_log(void);
+
 #endif /* SIM_SYS_SLOG2_H */

@@ -41,10 +41,14 @@ int main(int argc, char **argv)
     uint64_t trace_id = 3000;
     uint32_t msg_id = 0;
 
+    const char *log_name;
+
     if (argc < 2) {
-        fprintf(stderr, "usage: diagnostics_client <server_name>\n");
+        fprintf(stderr, "usage: diagnostics_client <channel_name> [log_name]\n");
         return 2;
     }
+
+    log_name = (argc > 2) ? argv[2] : argv[1];
 
     signal(SIGINT, _on_signal);
     signal(SIGTERM, _on_signal);
@@ -56,7 +60,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    coid = rtarch_connect(argv[1], &server_pid);
+    coid = rtarch_open(argv[1], &server_pid);
     if (coid < 0) {
         fprintf(stderr, "diagnostics_client: connect to %s failed\n", argv[1]);
         return 1;
@@ -79,7 +83,7 @@ int main(int argc, char **argv)
 
         rtarch_log_send(trace_id, msg_id,
                         getpid(), "diagnostics_client",
-                        server_pid, argv[1],
+                        server_pid, log_name,
                         "DIAG_REQ", PRIO);
 
         if (MsgSend(coid, &req, sizeof(req), &rep, sizeof(rep)) < 0) {

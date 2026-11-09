@@ -27,6 +27,8 @@
 #include <sys/slog2.h>
 #include <sys/neutrino.h>
 #include <sys/netmgr.h>
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
 
 /* ------------------------------------------------------------------ */
 /*  Payload                                                           */
@@ -194,6 +196,40 @@ static inline int rtarch_wait_for_addr(
         waited += 20;
     }
     return -1;
+}
+
+/*
+ * Open a named channel.  Prefers the QNX name space (name_open); if the name
+ * is not resolvable, falls back to a direct ConnectAttach using the address
+ * file.  Returns the connection id, or -1 on failure.
+ *
+ * When server_pid is non-NULL it receives the peer's pid (used for logging).
+ */
+static inline int rtarch_open(const char *channel_name, int *server_pid)
+{
+    int pid = 0;
+    int chid = 0;
+    int coid;
+
+    /* Best-effort pid discovery for logging. */
+    (void)rtarch_wait_for_addr(channel_name, &pid, &chid, 5000);
+    if (server_pid != NULL) {
+        *server_pid = pid;
+    }
+
+    coid = name_open(channel_name, 0);
+    if (coid < 0) {
+        char full[192];
+
+        snprintf(full, sizeof(full), "/dev/name/local/%s", channel_name);
+        coid = name_open(full, 0);
+    }
+    if (coid >= 0) {
+        return coid;
+    }
+
+    /* Fallback: direct channel attach. */
+    return ConnectAttach(ND_LOCAL_NODE, pid, chid, 0, 0);
 }
 
 /*

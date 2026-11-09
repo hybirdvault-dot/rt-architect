@@ -41,10 +41,16 @@ int main(int argc, char **argv)
     uint64_t trace_id = 1000;
     uint32_t msg_id = 0;
 
+    const char *log_name;
+
     if (argc < 2) {
-        fprintf(stderr, "usage: sensor_service <server_name>\n");
+        fprintf(stderr, "usage: sensor_service <channel_name> [log_name]\n");
         return 2;
     }
+
+    /* The channel name is used for connection; log_name is what appears in
+     * the RTARCH events (it defaults to the channel name). */
+    log_name = (argc > 2) ? argv[2] : argv[1];
 
     signal(SIGINT, _on_signal);
     signal(SIGTERM, _on_signal);
@@ -56,7 +62,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    coid = rtarch_connect(argv[1], &server_pid);
+    coid = rtarch_open(argv[1], &server_pid);
     if (coid < 0) {
         fprintf(stderr, "sensor_service: connect to %s failed\n", argv[1]);
         return 1;
@@ -79,7 +85,7 @@ int main(int argc, char **argv)
 
         rtarch_log_send(trace_id, msg_id,
                         getpid(), "sensor_service",
-                        server_pid, argv[1],
+                        server_pid, log_name,
                         "SENSOR_FRAME", PRIO);
 
         if (MsgSend(coid, &req, sizeof(req), &rep, sizeof(rep)) < 0) {

@@ -49,10 +49,14 @@ int main(int argc, char **argv)
     uint64_t forwarded_trace_id = 5000;
     uint32_t forwarded_msg_id = 0;
 
+    const char *log_name;
+
     if (argc < 2) {
-        fprintf(stderr, "usage: perception_service <brake_name>\n");
+        fprintf(stderr, "usage: perception_service <channel_name> [log_name]\n");
         return 2;
     }
+
+    log_name = (argc > 2) ? argv[2] : argv[1];
 
     signal(SIGINT, _on_signal);
     signal(SIGTERM, _on_signal);
@@ -75,7 +79,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    brake_coid = rtarch_connect(argv[1], &brake_pid);
+    brake_coid = rtarch_open(argv[1], &brake_pid);
     if (brake_coid < 0) {
         fprintf(stderr, "perception_service: connect to %s failed\n", argv[1]);
         return 1;
@@ -125,7 +129,7 @@ int main(int argc, char **argv)
 
         rtarch_log_send(brake_req.trace_id, brake_req.msg_id,
                         getpid(), "perception_service",
-                        brake_pid, argv[1],
+                        brake_pid, log_name,
                         "BRAKE_CMD", BRAKE_PRIO);
 
         if (MsgSend(brake_coid, &brake_req, sizeof(brake_req),

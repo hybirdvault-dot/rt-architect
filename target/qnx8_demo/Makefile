@@ -9,6 +9,7 @@
 include common.mk
 
 SERVICES := sensor_service perception_service brake_controller \
+            brake_controller_fixed \
             telemetry_client diagnostics_client
 
 BINS := $(SERVICES)
@@ -17,7 +18,7 @@ OBJS := $(SERVICES:%=%/main.o)
 all: $(BINS)
 
 $(BINS): %: %/main.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lpthread
 
 clean:
 	rm -f $(OBJS) $(BINS)

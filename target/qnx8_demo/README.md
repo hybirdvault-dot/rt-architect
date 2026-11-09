@@ -56,6 +56,24 @@ Because the service times are artificial, they are the knob to tune when
 matching a real target's timing. See `docs/qnx_setup.md` for the full
 installation and extraction guide.
 
+## The fixed variant
+
+`brake_controller_fixed` splits the service into two threads on two named
+channels:
+
+| Channel | Priority | Receives | Service time |
+|---|---|---|---|
+| `rtarch/brake_fast` | 30 | `BRAKE_CMD` | immediate |
+| `rtarch/brake_slow` | 10 | `TELEMETRY_REQ`, `DIAG_REQ` | bounded |
+
+Low-priority traffic can no longer sit in front of a brake command, so the
+head-of-line blocking and the bottleneck disappear. Both threads still log
+`src_name`/`dst_name = brake_controller`, so the service graph is unchanged and
+the scenario JSON does not change.
+
+Run it on QNX with `sh scripts/run_fixed_demo.sh`; run it on the host with
+`bash target/linux_sim/run_fixed_sim.sh`.
+
 ## Expected findings
 
 With `scenarios/brake_demo.json` the flawed demo should produce:
@@ -67,6 +85,11 @@ With `scenarios/brake_demo.json` the flawed demo should produce:
 | `HEAD-OF-LINE-001` | high-priority brake commands blocked by low-priority work |
 | `QUEUE-WAIT-001` | queue wait dominates the perception→brake edge |
 | `SPOF-001` | brake is on the critical path with no alternative |
+
+The fixed demo should clear `BOTTLENECK-001`, `HEAD-OF-LINE-001` and
+`CRITICAL-PATH-001`, and **keep `SPOF-001`**. Splitting threads does not add
+redundancy: if the process dies, the critical path dies with it. That is the
+point — the next fix is redundancy, not another thread split.
 
 If real QNX timing differs, tune `deadline_ms` and the thresholds in the
 scenario JSON — never in the code.

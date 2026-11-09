@@ -29,6 +29,7 @@ optional later layer — the tool never depends on it.
 - [x] `pytest` suite — 28 tests
 - [x] QNX 8.0 target instrumentation (`rtarch_ipc.h`) — API verified against the QNX 8.0 library reference
 - [x] Five demo services with the flawed single-threaded `brake_controller`
+- [x] Fixed variant: `brake_controller_fixed` (two threads, two named channels)
 - [x] Host-side simulation that compiles the real C sources and runs the full pipeline
 - [ ] Real QNX 8.0 QEMU run — **blocked in this environment** (no QNX SDP, no QEMU, no sudo)
 - [ ] Optional AI explainer with 5 s timeout + deterministic fallback

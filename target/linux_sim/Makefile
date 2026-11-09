@@ -11,6 +11,7 @@ LDFLAGS := -lpthread -lrt
 SIM     := rtarch_sim
 OBJS    := shim.o sim_main.o \
            sensor_service.o perception_service.o brake_controller.o \
+           brake_controller_fixed.o \
            telemetry_client.o diagnostics_client.o
 
 all: $(SIM)
@@ -32,6 +33,9 @@ perception_service.o: ../qnx8_demo/perception_service/main.c ../qnx8_demo/includ
 
 brake_controller.o: ../qnx8_demo/brake_controller/main.c ../qnx8_demo/include/rtarch_ipc.h
 	$(CC) $(CFLAGS) -Dmain=brake_controller_entry -c -o $@ $<
+
+brake_controller_fixed.o: ../qnx8_demo/brake_controller_fixed/main.c ../qnx8_demo/include/rtarch_ipc.h
+	$(CC) $(CFLAGS) -Dmain=brake_controller_fixed_entry -c -o $@ $<
 
 telemetry_client.o: ../qnx8_demo/telemetry_client/main.c ../qnx8_demo/include/rtarch_ipc.h
 	$(CC) $(CFLAGS) -Dmain=telemetry_client_entry -c -o $@ $<
