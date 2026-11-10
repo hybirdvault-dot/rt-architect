@@ -10,7 +10,20 @@ public QNX SDP 8.0 QEMU walkthrough that ships with the platform.
 
 ## 1. Accept and deploy the licence
 
-Your licence email (serial `911285-10383452`) gives three steps:
+The licence certificate (PDF) contains three fields you will need:
+
+| Field | Where it is used |
+|---|---|
+| Serial Number | myQNX "register a product" |
+| Registration Password | myQNX "register a product" |
+| License Key | the QNX Software Center prompt, if it asks |
+
+> **Keep these private.** They are BlackBerry confidential information. They
+> are deliberately **not** recorded in this repository — the scripts read the
+> installed SDP from `~/qnx800`, never from git. Do not paste them into issues,
+> commits, or chat.
+
+### Path A — the licence email (simplest)
 
 1. Log in to your **myQNX** account and open **myQNX License Manager**:
    <https://www.qnx.com/account/dashboard>
@@ -19,11 +32,28 @@ Your licence email (serial `911285-10383452`) gives three steps:
 3. Click the **Users** column and **deploy** the licence to your own account
    (`ammarbloch@protonmail.com`).
 
-Once deployed, the QNX Software Center will see the licence when you log in
-with that account.
+### Path B — register the certificate manually
 
-> The licence manager in your screenshot shows every seat as **Available** —
-> that means none has been accepted/deployed yet. Do step 2 and 3 first.
+The certificate is also self-service: *"you may manually register the Serial
+Number below in your account at myQNX.com to facilitate deployment and use of
+the Software."*
+
+1. Log in at <https://www.qnx.com/account/dashboard>
+2. Find **Register a product / Add a licence** (myQNX License Manager).
+3. Enter the **Serial Number** and **Registration Password** from the PDF.
+4. The licence appears in your account; deploy it to your user as in Path A.
+
+Once deployed, the QNX Software Center sees the licence when you log in with
+that account.
+
+### Licence terms (from the certificate)
+
+`Perpetual — Developer License — Non-Commercial Single-User License`
+(QNX SDP 8.0, Non-Commercial/Academic License Class).
+
+This permits **non-commercial** use. A hackathon submission with no revenue is
+non-commercial; anything that monetises the project would require a commercial
+licence.
 
 ## 2. Install the QNX Software Center
 
