@@ -33,7 +33,7 @@ grep RTARCH "$RAW_LOG" > "$FILTERED" || true
 echo "RTARCH lines: "$(wc -l < "$FILTERED")
 echo
 
-.venv/bin/rtarch "$FILTERED" --scenario "$SCENARIO" --output "$OUT"
+"${PYTHON:-.venv/bin/python}" -m rtarch analyze "$FILTERED" --scenario "$SCENARIO" --output "$OUT"
 echo
 echo "Filtered log: $FILTERED"
 echo "Report:       $OUT"

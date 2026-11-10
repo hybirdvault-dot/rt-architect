@@ -28,6 +28,6 @@ echo "RTARCH events: $(grep -c RTARCH "$LOG")"
 echo
 
 cd "$REPO"
-.venv/bin/rtarch "$LOG" \
+"${PYTHON:-.venv/bin/python}" -m rtarch analyze "$LOG" \
   --scenario scenarios/brake_demo.json \
   --output examples/reports/sim_flawed_report.html
