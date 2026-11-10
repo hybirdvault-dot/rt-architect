@@ -1,85 +1,93 @@
 #!/usr/bin/env bash
 #
-# Install the QNX SDP 8.0 from its installer and build the demo services.
+# Point the demo at an installed QNX SDP 8.0 and build the services with qcc.
 #
-#   scripts/setup_qnx_sdp.sh <installer.run> [install_prefix]
+# The SDP is normally installed by the QNX Software Center (see
+# docs/qnx_setup.md section 3), which puts it in ~/qnx800 by default.  This
+# script then sources the environment and builds.
 #
-# Default install prefix: ~/qnx800
+# Usage:
+#   scripts/setup_qnx_sdp.sh                     # use ~/qnx800
+#   scripts/setup_qnx_sdp.sh --prefix /opt/qnx800
+#   scripts/setup_qnx_sdp.sh --installer <x.run> # run an installer first
 #
-# What this does:
-#   1. runs the QNX installer into a user-writable prefix (no root needed)
-#   2. sources qnxsdp-env.sh
-#   3. builds all six demo services with the real qcc
-#   4. reports the qcc version and the binaries it produced
-#
-# If the installer needs a display, run it yourself with:
-#   ./<installer>.run            (GUI)  or  ./<installer>.run -i console
-# then re-run this script with --env-only to skip straight to the build.
+# The QNX Software Center installs to a location it chooses; pass --prefix
+# if it is not ~/qnx800.
 
 set -euo pipefail
 
+PREFIX="${QNX_SDP:-$HOME/qnx800}"
 INSTALLER=""
-PREFIX="${QNX_SDP_PREFIX:-$HOME/qnx800}"
-ENV_ONLY=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --env-only) ENV_ONLY=1; shift ;;
+        --prefix)   PREFIX="$2"; shift 2 ;;
+        --installer) INSTALLER="$2"; shift 2 ;;
         -*) echo "unknown option: $1" >&2; exit 2 ;;
-        *) if [ -z "$INSTALLER" ]; then INSTALLER="$1"; else PREFIX="$1"; fi; shift ;;
+        *)  echo "usage: $0 [--prefix <dir>] [--installer <file.run>]" >&2; exit 2 ;;
     esac
 done
 
-if [ "$ENV_ONLY" -eq 0 ]; then
-    if [ -z "$INSTALLER" ]; then
-        echo "usage: $0 <qnx800-linux-x86_64-installer.run> [install_prefix]" >&2
-        echo "   or: $0 --env-only            (skip the install, just build)" >&2
-        exit 2
-    fi
+# --- optional: run a raw installer ------------------------------------
+if [ -n "$INSTALLER" ]; then
     if [ ! -f "$INSTALLER" ]; then
         echo "ERROR: installer not found: $INSTALLER" >&2
         exit 1
     fi
-
     chmod +x "$INSTALLER"
-    echo "Installing QNX SDP 8.0 into $PREFIX ..."
-    # The QNX installer is a InstallAnywhere/Qt installer.  Try the silent
-    # forms first; fall back to the interactive console mode.
+    echo "Running $INSTALLER into $PREFIX ..."
     if ! "$INSTALLER" --mode silent --prefix "$PREFIX" --accept-licenses 2>/dev/null; then
-        if ! "$INSTALLER" -i console --prefix "$PREFIX" --accept-licenses 2>/dev/null; then
-            echo
-            echo "Silent install failed. Run the installer interactively:" >&2
-            echo "    $INSTALLER -i console --prefix $PREFIX" >&2
-            echo "then re-run: $0 --env-only" >&2
-            exit 1
-        fi
+        echo "Silent install failed; run it interactively:" >&2
+        echo "    $INSTALLER -i console --prefix $PREFIX" >&2
+        echo "then re-run this script with --prefix $PREFIX" >&2
+        exit 1
     fi
 fi
 
+# --- locate the SDP environment ---------------------------------------
 ENV_SH="$PREFIX/qnxsdp-env.sh"
 if [ ! -f "$ENV_SH" ]; then
-    echo "ERROR: $ENV_SH not found — the SDP is not installed at $PREFIX" >&2
+    cat >&2 <<EOF
+ERROR: $ENV_SH not found.
+
+The QNX SDP 8.0 is installed by the QNX Software Center, not by this script.
+Steps (docs/qnx_setup.md):
+
+  1. accept and deploy the licence in myQNX License Manager
+  2. run ~/qnx/qnxsoftwarecenter/qnxsoftwarecenter and log in
+  3. install "QNX SDP 8.0" for the Linux host
+  4. install "QNX SDP 8.0 Quick Start Target Image for QEMU"
+  5. re-run this script, adding --prefix if it installed somewhere else
+EOF
     exit 1
 fi
 
-echo
 echo "Sourcing $ENV_SH"
 # shellcheck disable=SC1090
 source "$ENV_SH"
 
-echo "qcc: $(command -v qcc)"
+QCC_BIN="$(command -v qcc || true)"
+if [ -z "$QCC_BIN" ]; then
+    echo "ERROR: qcc not on PATH after sourcing $ENV_SH" >&2
+    exit 1
+fi
+echo "qcc: $QCC_BIN"
 qcc -V 2>&1 | head -1 || true
 
 echo
 echo "Building the demo services ..."
-make -C "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo" clean
-make -C "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo" all
+DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/target/qnx8_demo"
+make -C "$DEMO_DIR" clean
+make -C "$DEMO_DIR" all
 
 echo
 echo "Done. Binaries:"
-ls -1 "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/sensor_service \
-      "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/perception_service \
-      "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/brake_controller \
-      "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/brake_controller_fixed \
-      "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/telemetry_client \
-      "$(dirname "${BASH_SOURCE[0]}")/../target/qnx8_demo"/diagnostics_client
+ls -1 "$DEMO_DIR"/sensor_service \
+      "$DEMO_DIR"/perception_service \
+      "$DEMO_DIR"/brake_controller \
+      "$DEMO_DIR"/brake_controller_fixed \
+      "$DEMO_DIR"/telemetry_client \
+      "$DEMO_DIR"/diagnostics_client
+
+echo
+echo "Next: bash scripts/run_qnx_demo.sh"

@@ -30,40 +30,35 @@ if [ ! -f "$IMAGE" ]; then
 fi
 
 # --- 1. boot the guest -------------------------------------------------
-echo "1/6 booting QEMU ($IMAGE)"
-rm -f "$SERIAL"
-"$ROOT/scripts/boot_qnx_qemu.sh" "$IMAGE" &
-QEMU_PID=$!
-trap 'kill $QEMU_PID 2>/dev/null || true' EXIT
-
-echo "     waiting for the guest to come up ..."
-for _ in $(seq 1 30); do
-    sleep 2
-    if [ -s "$SERIAL" ] && grep -q "QNX" "$SERIAL" 2>/dev/null; then
-        break
-    fi
-done
+echo "1/6 booting the QNX 8.0 QSTI"
+if [ -x "$HOME/qnx800/host/common/bin/mkqnximage" ]; then
+    "$ROOT/scripts/boot_qnx_qemu.sh" &
+    QEMU_PID=$!
+    trap 'kill $QEMU_PID 2>/dev/null || true' EXIT
+    echo "     launched with mkqnximage --run; log in as root/root"
+else
+    echo "     QSTI not installed — see docs/qnx_setup.md section 3."
+    echo "     Install 'QNX SDP 8.0 Quick Start Target Image for QEMU', then re-run."
+fi
 
 # --- 2. copy the binaries into the guest --------------------------------
 echo "2/6 copying demo binaries into the guest"
-echo "     TODO(transport): adapt to this image."
-echo "       - serial:  base64 the binaries and paste them into the guest shell"
-echo "       - network: scp -P 2222 <bin> root@127.0.0.1:$GUEST_DIR/"
-echo "       - shared:  mount the host directory from the guest"
-cat <<'EOF'
-     The transport is the only image-specific step.  Everything before and
-     after it is identical for every QNX 8.0 QEMU BSP.  See docs/qnx_setup.md
-     section 6 for the three options.
-EOF
+GUEST_IP="${QNX_GUEST_IP:-192.168.122.146}"
+echo "     in the guest terminal, check for sshd:"
+echo "         pidin args | grep -i sshd"
+echo "     if present, from this host:"
+echo "         scp $ROOT/target/qnx8_demo/{sensor_service,perception_service,brake_controller,brake_controller_fixed,telemetry_client,diagnostics_client} root@$GUEST_IP:/tmp/"
+echo "     otherwise use the serial console or attach the binaries to the image."
+echo "     The transport is the only image-specific step; see docs/qnx_setup.md."
 
 # --- 3. run the flawed demo -------------------------------------------
 echo "3/6 running the flawed demo in the guest"
-echo "     in the guest shell:  cd $GUEST_DIR && sh scripts/run_flawed_demo.sh"
+echo "     in the guest shell:  cd /tmp && sh scripts/run_flawed_demo.sh"
 
 # --- 4. extract the slog2 log -----------------------------------------
 echo "4/6 extracting slog2"
-echo "     in the guest shell:  sh scripts/extract_slog2.sh $GUEST_DIR/raw_slog2.txt"
-echo "     then copy $GUEST_DIR/raw_slog2.txt back to the host as"
+echo "     in the guest shell:  sh scripts/extract_slog2.sh /tmp/raw_slog2.txt"
+echo "     then copy /tmp/raw_slog2.txt back to the host as"
 echo "     examples/logs/real_qnx_flawed.log"
 
 # --- 5. analyse --------------------------------------------------------

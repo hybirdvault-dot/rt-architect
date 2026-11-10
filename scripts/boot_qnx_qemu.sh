@@ -1,52 +1,67 @@
 #!/usr/bin/env bash
 #
-# Boot a QNX 8.0 QEMU image with a single command.
+# Boot the QNX 8.0 Quick Start Target Image for QEMU (QSTI).
+#
+# Preferred path: the QSTI ships its own launcher, which knows the right
+# QEMU flags for the image.
+#
+#   source ~/qnx800/qnxsdp-env.sh
+#   cd ~/qnx800/images/qemu/qemu
+#   mkqnximage --run
+#
+# Fallback: if the QSTI is not installed, boot a raw disk image with the
+# locally installed QEMU (scripts/setup_qemu_local.sh).
 #
 # Usage:
-#   scripts/setup_qemu_local.sh              # one-off: install QEMU privately
-#   scripts/boot_qnx_qemu.sh [image]         # boot the guest
-#
-# Environment:
-#   QEMU_BIN   path to the qemu-system-x86_64 wrapper
-#              (default: ~/rt-architect-tools/qemu/bin/qemu-system-x86_64)
-#   QNX_IMAGE  path to the bootable QNX disk image
-#              (default: ./qnx80-hdd.img)
-#
-# The guest serial console is captured to /tmp/qnx_serial.txt, which is how
-# `slog2info` output is read back on the host (see docs/qnx_setup.md).
+#   scripts/boot_qnx_qemu.sh                 # use mkqnximage --run
+#   scripts/boot_qnx_qemu.sh <disk.img>      # fall back to raw QEMU
 
 set -euo pipefail
 
+QNX_SDP="${QNX_SDP:-$HOME/qnx800}"
+QSTI_DIR="$QNX_SDP/images/qemu/qemu"
+MKQNXIMAGE="$QNX_SDP/host/common/bin/mkqnximage"
 QEMU_BIN="${QEMU_BIN:-$HOME/rt-architect-tools/qemu/bin/qemu-system-x86_64}"
-QNX_IMAGE="${1:-${QNX_IMAGE:-qnx80-hdd.img}}"
+RAW_IMAGE="${1:-${QNX_IMAGE:-qnx80-hdd.img}}"
 SERIAL_OUT="${SERIAL_OUT:-/tmp/qnx_serial.txt}"
-HOST_SSH_PORT="${HOST_SSH_PORT:-2222}"
 
+if [ -x "$MKQNXIMAGE" ] && [ -d "$QSTI_DIR" ]; then
+    echo "Booting the QNX SDP 8.0 Quick Start Target Image for QEMU"
+    echo "  image dir: $QSTI_DIR"
+    echo "  login:     root / root"
+    echo
+    # shellcheck disable=SC1090
+    source "$QNX_SDP/qnxsdp-env.sh"
+    cd "$QSTI_DIR"
+    exec mkqnximage --run
+fi
+
+# --- fallback: raw QEMU ------------------------------------------------
 if [ ! -x "$QEMU_BIN" ]; then
-    echo "ERROR: QEMU not found at $QEMU_BIN" >&2
-    echo "       Run: bash scripts/setup_qemu_local.sh" >&2
+    echo "ERROR: neither the QSTI nor a local QEMU was found." >&2
+    echo "       QSTI:  install 'QNX SDP 8.0 Quick Start Target Image for QEMU'" >&2
+    echo "       QEMU:  bash scripts/setup_qemu_local.sh" >&2
     exit 1
 fi
 
-if [ ! -f "$QNX_IMAGE" ]; then
-    echo "ERROR: QNX disk image not found: $QNX_IMAGE" >&2
+if [ ! -f "$RAW_IMAGE" ]; then
+    echo "ERROR: QNX disk image not found: $RAW_IMAGE" >&2
     echo "       Set QNX_IMAGE or pass it as the first argument." >&2
     exit 1
 fi
 
-echo "Booting QNX 8.0 from $QNX_IMAGE"
+echo "QSTI not found — booting $RAW_IMAGE with local QEMU"
 echo "  serial console -> $SERIAL_OUT"
-echo "  hostfwd ssh    -> localhost:$HOST_SSH_PORT"
 echo "  quit QEMU with: Ctrl-A then X"
 echo
 
 exec "$QEMU_BIN" \
     -m 512 \
     -smp 2 \
-    -drive "file=$QNX_IMAGE,format=raw,if=ide" \
+    -drive "file=$RAW_IMAGE,format=raw,if=ide" \
     -nographic \
     -serial "file:$SERIAL_OUT" \
-    -netdev "user,id=n0,hostfwd=tcp::$HOST_SSH_PORT-:22" \
+    -netdev "user,id=n0,hostfwd=tcp::2222-:22" \
     -device e1000,netdev=n0 \
     -rtc base=utc \
     "$@"
