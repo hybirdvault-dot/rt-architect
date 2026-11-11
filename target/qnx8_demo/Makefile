@@ -1,10 +1,10 @@
 # RTArchitect — QNX 8.0 demo services.
 #
-#   make            build all five services
+#   make            build all six services into bin/
 #   make clean      remove build artefacts
 #
-# The binaries land in target/qnx8_demo/ and are copied into the QNX QEMU
-# guest (or run natively on the target).
+# The binaries go in bin/ rather than the project root, because each service
+# also owns a source directory of the same name (sensor_service/, ...).
 
 include common.mk
 
@@ -12,15 +12,24 @@ SERVICES := sensor_service perception_service brake_controller \
             brake_controller_fixed \
             telemetry_client diagnostics_client
 
-BINS := $(SERVICES)
-OBJS := $(SERVICES:%=%/main.o)
+BINDIR := bin
+BINS   := $(addprefix $(BINDIR)/,$(SERVICES))
+OBJS   := $(SERVICES:%=%/main.o)
 
 all: $(BINS)
 
-$(BINS): %: %/main.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lpthread
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+# QNX Neutrino keeps the pthread API inside libc, so there is no -lpthread.
+$(BINS): $(BINDIR)/%: %/main.o | $(BINDIR)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+$(OBJS): %/main.o: %/main.c include/rtarch_ipc.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJS) $(BINS)
+	rm -f $(OBJS)
+	rm -rf $(BINDIR)
 
 .PHONY: all clean

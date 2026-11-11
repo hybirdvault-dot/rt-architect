@@ -17,19 +17,19 @@ rm -f /tmp/rtarch_*.addr
 
 echo "Starting RTArchitect FIXED demo..."
 
-./brake_controller_fixed &
+./bin/brake_controller_fixed &
 BRAKE=$!
 
-./perception_service brake_fast brake_controller &
+./bin/perception_service brake_fast brake_controller &
 PERCEPTION=$!
 
-./telemetry_client brake_slow brake_controller &
+./bin/telemetry_client brake_slow brake_controller &
 TELEMETRY=$!
 
-./diagnostics_client brake_slow brake_controller &
+./bin/diagnostics_client brake_slow brake_controller &
 DIAGNOSTICS=$!
 
-./sensor_service perception_service &
+./bin/sensor_service perception_service &
 SENSOR=$!
 
 # Same iteration counts as the flawed demo.
