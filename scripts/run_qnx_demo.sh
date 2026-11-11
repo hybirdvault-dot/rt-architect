@@ -47,7 +47,7 @@ GUEST_IP="${QNX_GUEST_IP:-192.168.122.146}"
 echo "     in the guest terminal, check for sshd:"
 echo "         pidin args | grep -i sshd"
 echo "     if present, from this host:"
-echo "         scp $ROOT/target/qnx8_demo/{sensor_service,perception_service,brake_controller,brake_controller_fixed,telemetry_client,diagnostics_client} root@$GUEST_IP:/tmp/"
+echo "         scp $ROOT/target/qnx8_demo/bin/{sensor_service,perception_service,brake_controller,brake_controller_fixed,telemetry_client,diagnostics_client} root@$GUEST_IP:/tmp/"
 echo "     otherwise use the serial console or attach the binaries to the image."
 echo "     The transport is the only image-specific step; see docs/qnx_setup.md."
 

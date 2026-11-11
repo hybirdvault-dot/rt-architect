@@ -17,19 +17,19 @@ rm -f /tmp/rtarch_*.addr
 
 echo "Starting RTArchitect flawed demo..."
 
-./brake_controller &
+./bin/brake_controller &
 BRAKE=$!
 
-./perception_service brake_controller &
+./bin/perception_service brake_controller &
 PERCEPTION=$!
 
-./telemetry_client brake_controller &
+./bin/telemetry_client brake_controller &
 TELEMETRY=$!
 
-./diagnostics_client brake_controller &
+./bin/diagnostics_client brake_controller &
 DIAGNOSTICS=$!
 
-./sensor_service perception_service &
+./bin/sensor_service perception_service &
 SENSOR=$!
 
 # Wait long enough for every client to finish its iteration count.
