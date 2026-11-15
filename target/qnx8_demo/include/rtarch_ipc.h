@@ -77,7 +77,13 @@ static inline int rtarch_init(const char *process_name)
     cfg.num_buffers = 1;
     cfg.verbosity_level = SLOG2_INFO;
     cfg.buffer_config[0].buffer_name = "rtarch";
-    cfg.buffer_config[0].num_pages = 4;
+    /*
+     * 256 pages = 1 MB.  The default of 4 pages (16 KB) holds only ~120
+     * events; a real demo generates well over a thousand and the buffer
+     * wraps, silently discarding the earliest events and breaking the
+     * SEND/RECV/REPLY pairing.  Verified on QNX 8.0.
+     */
+    cfg.buffer_config[0].num_pages = 256;
     cfg.max_retries = UINT32_MAX;
 
     (void)slog2_reset();

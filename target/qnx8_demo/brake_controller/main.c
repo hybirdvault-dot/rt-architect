@@ -123,6 +123,20 @@ int main(void)
             break;
         }
 
+        /*
+         * rcvid == 0 means a pulse, not a request.  A kind outside 1..4 is
+         * name-space / connection traffic that arrives on the channel.  Both
+         * were observed on real QNX 8.0 and must not be logged as requests,
+         * otherwise they create a bogus "unknown" node in the graph.
+         */
+        if (rcvid == 0) {
+            continue;
+        }
+        if (req.kind < RTARCH_KIND_SENSOR_FRAME || req.kind > RTARCH_KIND_DIAG) {
+            fprintf(stderr, "brake_controller: ignoring unknown kind %u\n", req.kind);
+            continue;
+        }
+
         rtarch_log_recv(req.trace_id, req.msg_id,
                         info.pid, _client_name(req.kind),
                         getpid(), "brake_controller",
