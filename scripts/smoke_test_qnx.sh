@@ -79,8 +79,10 @@ field() {  # field <name> <summary>
 run_sim_backend() {
     echo "=== host simulation backend ==="
     (cd target/linux_sim && make >/dev/null 2>&1)
-    target/linux_sim/rtarch_sim flawed > "$ROOT/$FLAWED_LOG" 2>&1
-    target/linux_sim/rtarch_sim fixed  > "$ROOT/$FIXED_LOG" 2>&1
+    # Bound each run: on a loaded runner a client thread can block in MsgSend,
+    # and an unbounded join would hang CI.
+    timeout 120 target/linux_sim/rtarch_sim flawed > "$ROOT/$FLAWED_LOG" 2>&1
+    timeout 120 target/linux_sim/rtarch_sim fixed  > "$ROOT/$FIXED_LOG" 2>&1
 }
 
 run_qnx_backend() {
