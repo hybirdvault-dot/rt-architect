@@ -380,7 +380,12 @@ int MsgReceive(int chid, void *rmsg, size_t rbytes, struct _msg_info *info)
         info->chid = chid;
     }
 
-    rcvid = (int)m->sender_slot;
+    /*
+     * QNX uses rcvid 0 to mean "a pulse, not a request".  The service code
+     * relies on that, so the simulation must never hand out 0: return
+     * slot + 1 and translate back in MsgReply.
+     */
+    rcvid = (int)m->sender_slot + 1;
     pthread_mutex_unlock(&ch->lock);
 
     return rcvid;
@@ -469,11 +474,16 @@ int MsgReply(int rcvid, int status, const void *rmsg, size_t rbytes)
 {
     sim_slot_t *slot;
 
-    if (rcvid < 0 || rcvid >= MAX_SLOTS || !_slots[rcvid].used) {
+    if (rcvid <= 0) {
         return -1;
     }
 
-    slot = &_slots[rcvid];
+    int index = rcvid - 1;
+    if (index >= MAX_SLOTS || !_slots[index].used) {
+        return -1;
+    }
+
+    slot = &_slots[index];
 
     pthread_mutex_lock(&slot->lock);
     slot->status = status;
