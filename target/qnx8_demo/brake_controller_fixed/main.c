@@ -118,6 +118,15 @@ static void *_path_thread(void *arg)
             break;
         }
 
+        /* Ignore pulses (rcvid 0) and name-space / connection traffic. */
+        if (rcvid == 0) {
+            continue;
+        }
+        if (req.kind < RTARCH_KIND_SENSOR_FRAME || req.kind > RTARCH_KIND_DIAG) {
+            fprintf(stderr, "%s: ignoring unknown kind %u\n", ctx->channel_name, req.kind);
+            continue;
+        }
+
         rtarch_log_recv(req.trace_id, req.msg_id,
                         info.pid, _client_name(req.kind),
                         getpid(), "brake_controller",
