@@ -75,9 +75,15 @@ def test_every_finding_is_evidence_backed_and_deterministic():
         assert finding.thresholds
 
 
-def test_fixed_log_produces_no_findings():
+def test_fixed_log_keeps_only_the_architectural_finding():
+    """
+    The fix splits the brake into a fast and a slow path, so the timing
+    findings clear.  Splitting threads does not add redundancy, so SPOF-001
+    must remain -- that is the honest result, not a rubber stamp.
+    """
     findings, _, _ = _run(FIXED_LOG, FIXED_SCENARIO)
-    assert findings == []
+    assert [f.rule_id for f in findings] == ["SPOF-001"]
+    assert findings[0].node == "brake_controller"
 
 
 def test_critical_finding_targets_brake_controller():

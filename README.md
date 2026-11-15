@@ -39,7 +39,9 @@ optional later layer — the tool never depends on it.
 - [x] Optional AI explainer + output validator (5 s bound, deterministic fallback)
 - [x] QNX prep scripts: QEMU boot, export dry-run, end-to-end smoke test
 - [x] Devpost draft, third-party notices, contributing guide
-- [ ] Real QNX 8.0 QEMU run — **blocked** (awaiting QNX SDP installer + QEMU BSP + licence)
+- [x] **Real QNX 8.0 target** — SDP installed, licence activated, image built with `mkqnximage`, QNX 8.0.0 booted under QEMU
+- [x] **Genuine `slog2` evidence** — 1655 real `RTARCH` events captured off the target; all five rules fire on the flawed log, `BOTTLENECK-001` clears on the fixed log
+- [ ] Record the demo video and submit (Dec 15)
 
 ---
 
@@ -149,6 +151,26 @@ runs them as threads, writes `examples/logs/sim_flawed_slog2.txt`, and analyses
 it. It is a functional simulation — it validates the C sources, the log format
 and the pipeline, but it is **not** QNX evidence. See
 [docs/qnx_setup.md](docs/qnx_setup.md) for the real QEMU workflow.
+
+---
+
+## Real QNX evidence
+
+A genuine QNX 8.0.0 target was built from the SDP (`mkqnximage`) and booted under
+QEMU; the five services ran on the microkernel and 1655 real `RTARCH` events were
+captured off the serial console.
+
+| Metric | Flawed | Fixed |
+|---|---|---|
+| brake p95 processing | 12.45 ms | **0.44 ms** |
+| perception→brake p95 queue wait | 7.88 ms | **0.83 ms** |
+| findings | 6 | 4 |
+
+All five rules fire on the flawed log; `BOTTLENECK-001` and the brake's
+`CRITICAL-PATH-001` clear on the fixed log, while `SPOF-001` correctly remains —
+splitting threads does not add redundancy. See
+[docs/qnx_sdp_target.md](docs/qnx_sdp_target.md) for the full procedure and the
+real numbers.
 
 ---
 

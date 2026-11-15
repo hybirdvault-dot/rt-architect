@@ -5,7 +5,7 @@
   "critical_path": [
     "sensor_service",
     "perception_service",
-    "brake_controller_fast"
+    "brake_controller"
   ],
   "thresholds": {
     "max_in_degree": 2,

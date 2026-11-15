@@ -29,7 +29,7 @@ def test_cli_generates_flawed_report(tmp_path):
     assert "CRITICAL-PATH-001" in html
 
 
-def test_cli_generates_clean_fixed_report(tmp_path):
+def test_cli_fixed_report_keeps_only_spof(tmp_path):
     out = tmp_path / "fixed.html"
     result = runner.invoke(
         app,
@@ -37,7 +37,8 @@ def test_cli_generates_clean_fixed_report(tmp_path):
     )
     assert result.exit_code == 0, result.output
     html = out.read_text(encoding="utf-8")
-    assert "No deterministic findings" in html
+    assert "SPOF-001" in html
+    assert "BOTTLENECK-001" not in html
 
 
 def test_cli_compare_produces_comparison_report(tmp_path):
