@@ -48,14 +48,14 @@ def test_report_contains_findings_graph_and_metrics(tmp_path):
     assert 'class="node critical has-finding"' in html
 
 
-def test_report_states_when_architecture_is_clean(tmp_path):
+def test_fixed_report_keeps_the_spof_finding(tmp_path):
     findings, nodes, edges, scenario, graph = _build(FIXED_LOG, FIXED_SCENARIO)
     out = tmp_path / "fixed.html"
     generate_report(findings, nodes, edges, scenario, str(out), graph=graph)
 
     html = out.read_text(encoding="utf-8")
-    assert "No deterministic findings" in html
-    assert "brake_controller_fast" in html
+    assert "SPOF-001" in html
+    assert "No deterministic findings" not in html
 
 
 def test_report_creates_missing_output_directories(tmp_path):
