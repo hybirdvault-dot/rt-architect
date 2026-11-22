@@ -7,7 +7,7 @@ backed by a file, a test, or a captured log.
 - **Repo:** <https://github.com/hybirdvault-dot/rt-architect>
 - **Original design doc:** `rtarchitect-full-system-design.md` (supplied at kick-off)
 - **Status:** build complete, real QNX evidence captured, CI green
-- **Last verified:** 32 commits, 54 tests passing
+- **Last verified:** 54 tests passing (commit count is a snapshot; see `git log`)
 
 ---
 
@@ -133,7 +133,7 @@ before any QNX image existed.
 
 ### 3.3 Scenarios — three
 
-`brake_demo` (5 ms) · `medical_pump` (2 ms) · `industrial_robot` (1 ms)
+`brake_demo` (deadline 5 ms) · `medical_pump` (deadline 2 ms) · `industrial_robot` (deadline 1 ms)
 
 Each fires all five rules on a completely different service topology.
 
@@ -168,7 +168,7 @@ QNX 8.0 target (QEMU)                      Linux host (Python)
 Real slog2 line, exactly as captured off the target:
 
 ```
-Nov 15 15:34:38.470  diagnostics_client.282647  rtarch  0  RTARCH v=1 ts_ns=30969952596 phase=SEND trace_id=3001 msg_id=1 src_pid=282647 src_name=diagnostics_client dst_pid=282642 dst_name=brake_controller msg_type=DIAG_REQ prio=10
+Nov 15 15:42:36.357      diagnostics_client.282646               rtarch*     0  RTARCH v=1 ts_ns=32192607144 phase=SEND trace_id=3001 msg_id=1 src_pid=282646 src_name=diagnostics_client dst_pid=282642 dst_name=brake_controller msg_type=DIAG_REQ prio=10
 ```
 
 The parser tolerates that prefix — which is the whole point of the Threat-4
@@ -190,7 +190,7 @@ incomplete. Each was corrected and is now covered by a test.
 | `trace_id` reused across hops | each hop gets its own `(trace_id, msg_id)` | otherwise triple grouping collapses two hops into one |
 | `NodeMetrics` had no Rule-3 inputs | computed `high_priority_blocked_count` and `low_priority_work_ratio` | Rule 3 was dead without them |
 | Node `msg_type` hardcoded `""` | carries the real message type | the schema already had the field |
-| `max_in_degree: 4`, `spof_min: 3` | tuned per scenario | the doc's own golden log could not trigger its own rules |
+| `max_in_degree: 4`, `spof_min: 3` | `max_in_degree` tuned per scenario (2 vs 3); `spof_min_in_degree` left at 2 | the doc's own golden log could not trigger its own rules |
 | Golden log off by 10× | rescaled to the documented narrative | doc claimed 7 ms, timestamps produced 70 ms |
 | AI layer | built, but strictly optional | 5 s hard bound + validator + deterministic fallback |
 | Second scenario | built, plus a third | two says "proved twice"; three says "generic tool" |
@@ -203,7 +203,7 @@ incomplete. Each was corrected and is now covered by a test.
 
 | | Flawed | Fixed |
 |---|---|---|
-| findings | 6 | 4 |
+| findings | 8 | 6 |
 
 ### Genuine QNX 8.0.0 target
 
@@ -212,11 +212,11 @@ events captured off the serial console.
 
 | Metric | Flawed | Fixed |
 |---|---|---|
-| brake p95 processing | **12.45 ms** | **0.44 ms** |
+| brake p95 processing | **10.19 ms** | **0.35 ms** |
 | perception→brake p95 queue wait | 7.88 ms | **0.83 ms** |
 | telemetry→brake p95 queue wait | 10.11 ms | **0.95 ms** |
 | diagnostics→brake p95 queue wait | 12.64 ms | **0.99 ms** |
-| findings | 6 | 4 |
+| findings | 8 | 6 |
 
 All five rules fire on the flawed log. `BOTTLENECK-001` and the brake's
 `CRITICAL-PATH-001` clear on the fixed log. `SPOF-001` correctly remains —

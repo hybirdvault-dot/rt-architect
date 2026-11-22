@@ -29,6 +29,13 @@ jobs:
         run: |
           .venv/bin/python -m pip install --upgrade pip
           .venv/bin/pip install -e '.[dev]'
+          .venv/bin/pip install ruff mypy
+
+      - name: Lint with ruff
+        run: .venv/bin/ruff check .
+
+      - name: Type-check with mypy
+        run: .venv/bin/mypy rtarch/ --ignore-missing-imports
 
       - name: Run tests
         run: .venv/bin/python -m pytest -v
@@ -38,3 +45,19 @@ jobs:
 
       - name: End-to-end smoke test
         run: timeout 300 bash scripts/smoke_test_qnx.sh sim
+
+      # Verification harness: exit 0 = GREEN (pass), 1 = YELLOW (warn), 2 = RED (fail).
+      - name: Run verification harness
+        run: |
+          set +e
+          .venv/bin/python verify/run_verify.py
+          rc=$?
+          set -e
+          if [ "$rc" -ge 2 ]; then
+            echo "::error::verification harness reported RED"
+            exit 1
+          fi
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning::verification harness reported YELLOW"
+          fi
+          exit 0

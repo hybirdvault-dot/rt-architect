@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 #include <errno.h>
 
@@ -148,6 +149,8 @@ typedef struct {
     int head;
     int tail;
     int count;
+    int pulse;
+    unsigned flags;
     pthread_mutex_t lock;
     pthread_cond_t avail;
     int used;
@@ -173,11 +176,12 @@ static pthread_mutex_t _slots_lock = PTHREAD_MUTEX_INITIALIZER;
 
 int sim_shutdown = 0;
 
+/* Shared shutdown flag for the services (they are threads in one process here). */
+volatile sig_atomic_t g_rtarch_shutdown = 0;
+
 int ChannelCreate(unsigned flags)
 {
     int chid;
-
-    (void)flags;
 
     pthread_mutex_lock(&_channels_lock);
     if (_channel_count >= MAX_CHANNELS) {
@@ -191,6 +195,7 @@ int ChannelCreate(unsigned flags)
     pthread_mutex_init(&_channels[chid].lock, NULL);
     pthread_cond_init(&_channels[chid].avail, NULL);
     _channels[chid].used = 1;
+    _channels[chid].flags = flags;
 
     return chid;
 }
@@ -304,10 +309,25 @@ long MsgSend(int coid, const void *smsg, size_t sbytes,
     pthread_cond_signal(&ch->avail);
     pthread_mutex_unlock(&ch->lock);
 
-    /* Block until the server replies, exactly like QNX MsgSend. */
+    /* Block until the server replies, exactly like QNX MsgSend.  The wait is
+     * bounded so a client cannot hang forever when the server has shut down. */
     pthread_mutex_lock(&slot->lock);
     while (!slot->ready) {
-        pthread_cond_wait(&slot->done, &slot->lock);
+        struct timespec ts;
+
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_nsec += 100L * 1000L * 1000L;   /* 100 ms */
+        if (ts.tv_nsec >= 1000000000L) {
+            ts.tv_sec++;
+            ts.tv_nsec -= 1000000000L;
+        }
+
+        if (pthread_cond_timedwait(&slot->done, &slot->lock, &ts) == ETIMEDOUT
+            && (sim_shutdown || g_rtarch_shutdown)) {
+            pthread_mutex_unlock(&slot->lock);
+            errno = EINTR;
+            return -1;
+        }
     }
     if (rmsg != NULL && rbytes > 0) {
         size_t n = (rbytes < slot->len) ? rbytes : slot->len;
@@ -316,6 +336,27 @@ long MsgSend(int coid, const void *smsg, size_t sbytes,
     pthread_mutex_unlock(&slot->lock);
 
     return (long)slot->status;
+}
+
+int MsgSendPulse(int coid, int priority, int code, int value)
+{
+    sim_channel_t *ch;
+
+    (void)priority;
+    (void)code;
+    (void)value;
+
+    if (coid < 0 || coid >= _channel_count) {
+        return -1;
+    }
+
+    ch = &_channels[coid];
+    pthread_mutex_lock(&ch->lock);
+    ch->pulse = 1;
+    pthread_cond_signal(&ch->avail);
+    pthread_mutex_unlock(&ch->lock);
+
+    return 0;
 }
 
 /*
@@ -347,21 +388,55 @@ int MsgReceive(int chid, void *rmsg, size_t rbytes, struct _msg_info *info)
     ch = &_channels[chid];
 
     pthread_mutex_lock(&ch->lock);
-    while (ch->count == 0) {
-        struct timespec ts;
+    if (ch->pulse) {
+        ch->pulse = 0;
+        pthread_mutex_unlock(&ch->lock);
+        return 0;
+    }
+    if (ch->flags & _NTO_CHF_UNBLOCK) {
+        /*
+         * _NTO_CHF_UNBLOCK: a signal unblocks the receive.  The sim models a
+         * signal as the shared shutdown flag set by the signal handler; the
+         * wait polls that flag on a short tick because a plain cond_wait is
+         * not interrupted by a flag change.
+         */
+        while (ch->count == 0 && !ch->pulse && !g_rtarch_shutdown) {
+            struct timespec ts;
 
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_nsec += 100L * 1000L * 1000L;   /* 100 ms */
-        if (ts.tv_nsec >= 1000000000L) {
-            ts.tv_sec++;
-            ts.tv_nsec -= 1000000000L;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_nsec += 10L * 1000L * 1000L;   /* 10 ms */
+            if (ts.tv_nsec >= 1000000000L) {
+                ts.tv_sec++;
+                ts.tv_nsec -= 1000000000L;
+            }
+            pthread_cond_timedwait(&ch->avail, &ch->lock, &ts);
         }
-
-        if (pthread_cond_timedwait(&ch->avail, &ch->lock, &ts) == ETIMEDOUT
-            && sim_shutdown) {
+        if (ch->count == 0) {
             pthread_mutex_unlock(&ch->lock);
+            if (ch->pulse) {
+                ch->pulse = 0;
+                return 0;
+            }
             errno = EINTR;
             return -1;
+        }
+    } else {
+        while (ch->count == 0) {
+            struct timespec ts;
+
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_nsec += 100L * 1000L * 1000L;   /* 100 ms */
+            if (ts.tv_nsec >= 1000000000L) {
+                ts.tv_sec++;
+                ts.tv_nsec -= 1000000000L;
+            }
+
+            if (pthread_cond_timedwait(&ch->avail, &ch->lock, &ts) == ETIMEDOUT
+                && sim_shutdown) {
+                pthread_mutex_unlock(&ch->lock);
+                errno = EINTR;
+                return -1;
+            }
         }
     }
 
@@ -470,6 +545,32 @@ int name_detach(name_attach_t *attach, unsigned flags)
     return 0;
 }
 
+int MsgError(int rcvid, int error)
+{
+    sim_slot_t *slot;
+    int index;
+
+    if (rcvid <= 0) {
+        return -1;
+    }
+
+    index = rcvid - 1;
+    if (index >= MAX_SLOTS || !_slots[index].used) {
+        return -1;
+    }
+
+    slot = &_slots[index];
+
+    pthread_mutex_lock(&slot->lock);
+    slot->status = error;
+    slot->len = 0;
+    slot->ready = 1;
+    pthread_cond_signal(&slot->done);
+    pthread_mutex_unlock(&slot->lock);
+
+    return 0;
+}
+
 int MsgReply(int rcvid, int status, const void *rmsg, size_t rbytes)
 {
     sim_slot_t *slot;
@@ -477,7 +578,6 @@ int MsgReply(int rcvid, int status, const void *rmsg, size_t rbytes)
     if (rcvid <= 0) {
         return -1;
     }
-
     int index = rcvid - 1;
     if (index >= MAX_SLOTS || !_slots[index].used) {
         return -1;

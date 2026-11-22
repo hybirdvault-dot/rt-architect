@@ -8,7 +8,7 @@ from rich.table import Table
 from .graph import build_graph
 from .metrics import compute_edge_metrics, compute_node_metrics
 from .parser import parse_log_with_stats
-from .report import generate_report
+from .report import generate_report, log_generated_at
 from .rules import run_rules
 from .scenario import load_scenario
 
@@ -135,7 +135,8 @@ def analyze(
         console.print("[dim]AI disabled — deterministic findings only.[/dim]")
 
     written = generate_report(
-        findings, node_metrics, edge_metrics, scenario, output, graph=graph
+        findings, node_metrics, edge_metrics, scenario, output, graph=graph,
+        source_path=log_file, generated_at=log_generated_at(events),
     )
     console.print(f"[bold green]Report written to:[/bold green] {written}")
 

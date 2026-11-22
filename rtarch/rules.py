@@ -9,12 +9,13 @@ Output ordering is part of the contract:
     2. node name (alphabetical)
     3. rule id   (alphabetical)
 
-Findings are deduplicated by ``(rule_id, node)`` and then numbered
-sequentially in final display order (``F-001`` ... ).
+Findings are deduplicated by ``(rule_id, node, title)`` and then numbered
+sequentially in final display order (``F-001`` ... ).  The title is part of
+the key because QUEUE-WAIT-001 is scoped to an edge, not a node: three edges
+into the same service are three distinct findings, not one.
 """
 
 from collections import OrderedDict
-from typing import Dict, List
 
 from .models import EdgeMetrics, Finding, NodeMetrics
 
@@ -22,15 +23,15 @@ SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 
 def run_rules(
-    node_metrics: Dict[str, NodeMetrics],
-    edge_metrics: Dict[str, EdgeMetrics],
-    scenario: Dict,
-) -> List[Finding]:
+    node_metrics: dict[str, NodeMetrics],
+    edge_metrics: dict[str, EdgeMetrics],
+    scenario: dict,
+) -> list[Finding]:
     """Run all five deterministic rules and return ordered, deduplicated findings."""
     thresholds = scenario.get("thresholds", {})
     deadline_ns = int(float(scenario.get("deadline_ms", 5.0)) * 1_000_000)
 
-    raw: List[Finding] = []
+    raw: list[Finding] = []
     raw.extend(_rule_critical_path_deadline(node_metrics, scenario, deadline_ns))
     raw.extend(_rule_bottleneck(node_metrics, deadline_ns, thresholds))
     raw.extend(_rule_head_of_line(node_metrics, thresholds))
@@ -40,11 +41,11 @@ def run_rules(
     return _finalize(raw)
 
 
-def _finalize(findings: List[Finding]) -> List[Finding]:
+def _finalize(findings: list[Finding]) -> list[Finding]:
     """Deduplicate, order and sequentially number findings."""
-    deduped: "OrderedDict[tuple, Finding]" = OrderedDict()
+    deduped: OrderedDict[tuple, Finding] = OrderedDict()
     for finding in findings:
-        key = (finding.rule_id, finding.node)
+        key = (finding.rule_id, finding.node, finding.title)
         if key not in deduped:
             deduped[key] = finding
 
@@ -64,12 +65,12 @@ def _finalize(findings: List[Finding]) -> List[Finding]:
 
 
 def _rule_critical_path_deadline(
-    node_metrics: Dict[str, NodeMetrics],
-    scenario: Dict,
+    node_metrics: dict[str, NodeMetrics],
+    scenario: dict,
     deadline_ns: int,
-) -> List[Finding]:
+) -> list[Finding]:
     """CRITICAL-PATH-001: a critical-path service exceeds the deadline."""
-    findings: List[Finding] = []
+    findings: list[Finding] = []
 
     for node_name in scenario.get("critical_path", []):
         nm = node_metrics.get(node_name)
@@ -109,16 +110,16 @@ def _rule_critical_path_deadline(
 
 
 def _rule_bottleneck(
-    node_metrics: Dict[str, NodeMetrics],
+    node_metrics: dict[str, NodeMetrics],
     deadline_ns: int,
-    thresholds: Dict,
-) -> List[Finding]:
+    thresholds: dict,
+) -> list[Finding]:
     """BOTTLENECK-001: a service is both a fan-in hub and slow."""
     max_in_degree = int(thresholds.get("max_in_degree", 4))
     fraction = float(thresholds.get("processing_deadline_fraction", 0.5))
     processing_floor = deadline_ns * fraction
 
-    findings: List[Finding] = []
+    findings: list[Finding] = []
 
     for node_name, nm in node_metrics.items():
         if nm.in_degree <= max_in_degree:
@@ -165,13 +166,13 @@ def _rule_bottleneck(
 
 
 def _rule_head_of_line(
-    node_metrics: Dict[str, NodeMetrics],
-    thresholds: Dict,
-) -> List[Finding]:
+    node_metrics: dict[str, NodeMetrics],
+    thresholds: dict,
+) -> list[Finding]:
     """HEAD-OF-LINE-001: high-priority work is blocked by low-priority work."""
     ratio_threshold = float(thresholds.get("low_priority_work_ratio", 0.4))
 
-    findings: List[Finding] = []
+    findings: list[Finding] = []
 
     for node_name, nm in node_metrics.items():
         if nm.high_priority_blocked_count <= 0:
@@ -216,13 +217,13 @@ def _rule_head_of_line(
 
 
 def _rule_queue_wait(
-    edge_metrics: Dict[str, EdgeMetrics],
-    thresholds: Dict,
-) -> List[Finding]:
+    edge_metrics: dict[str, EdgeMetrics],
+    thresholds: dict,
+) -> list[Finding]:
     """QUEUE-WAIT-001: queue wait dominates the end-to-end latency of an edge."""
     ratio_threshold = float(thresholds.get("queue_wait_ratio", 0.5))
 
-    findings: List[Finding] = []
+    findings: list[Finding] = []
 
     for em in edge_metrics.values():
         if em.p95_total_ns <= 0:
@@ -264,13 +265,13 @@ def _rule_queue_wait(
 
 
 def _rule_single_point_of_failure(
-    node_metrics: Dict[str, NodeMetrics],
-    thresholds: Dict,
-) -> List[Finding]:
+    node_metrics: dict[str, NodeMetrics],
+    thresholds: dict,
+) -> list[Finding]:
     """SPOF-001: a critical-path service has no architectural alternative."""
     min_in_degree = int(thresholds.get("spof_min_in_degree", 3))
 
-    findings: List[Finding] = []
+    findings: list[Finding] = []
 
     for node_name, nm in node_metrics.items():
         if not nm.on_critical_path:

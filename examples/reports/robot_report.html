@@ -159,14 +159,21 @@
     <span>Scenario: <strong>industrial_robot</strong></span>
     <span>Target: <strong>QNX 8.0 QEMU</strong></span>
     <span>Deadline: <strong>1.0 ms</strong></span>
-    <span>Generated: <strong>2026-11-09 16:04:27 UTC</strong></span>
+    <span>Generated: <strong>last event ts_ns=1002300000</strong></span>
   </div>
+  
+  <div class="meta">
+    <span>Source: <strong>/home/BALOCH/Desktop/rt-architect/tests/golden/synthetic_robot.log</strong></span>
+    <span>Size: <strong>2508 bytes</strong></span>
+    <span>SHA-256: <strong>41bf3ffc62069c269c9d78cf9dfb3a0231d3d21b6fb5d5e8fc9b6540898c3bf3</strong></span>
+  </div>
+  
 </header>
 
 <main>
   <div class="summary">
     <div class="card critical"><span class="number">2</span><span class="label">Critical</span></div>
-    <div class="card warning"><span class="number">3</span><span class="label">Warning</span></div>
+    <div class="card warning"><span class="number">5</span><span class="label">Warning</span></div>
     <div class="card info"><span class="number">0</span><span class="label">Info</span></div>
     <div class="card neutral"><span class="number">6</span><span class="label">Services</span></div>
     <div class="card neutral"><span class="number">5</span><span class="label">IPC Edges</span></div>
@@ -299,6 +306,90 @@
         <span class="rule">QUEUE-WAIT-001</span>
         <span class="fid">F-004</span>
       </div>
+      <h3>Queue wait dominates on calibration_client -&gt; motor_controller</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.4</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_queue_wait_ns</td><td>1000000</td></tr>
+            
+            <tr><td>p95_queue_wait_ms</td><td>1.0</td></tr>
+            
+            <tr><td>p95_total_ns</td><td>1500000</td></tr>
+            
+            <tr><td>p95_total_ms</td><td>1.5</td></tr>
+            
+            <tr><td>ratio</td><td>0.6667</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>queue_wait_ratio</td><td>0.4</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>p95 queue wait is 1.00 ms</li><li>p95 total latency is 1.50 ms</li><li>queue wait is 66.7% of total latency</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="fid">F-005</span>
+      </div>
+      <h3>Queue wait dominates on diagnostics_client -&gt; motor_controller</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.4</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_queue_wait_ns</td><td>1000000</td></tr>
+            
+            <tr><td>p95_queue_wait_ms</td><td>1.0</td></tr>
+            
+            <tr><td>p95_total_ns</td><td>1500000</td></tr>
+            
+            <tr><td>p95_total_ms</td><td>1.5</td></tr>
+            
+            <tr><td>ratio</td><td>0.6667</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>queue_wait_ratio</td><td>0.4</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>p95 queue wait is 1.00 ms</li><li>p95 total latency is 1.50 ms</li><li>queue wait is 66.7% of total latency</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="fid">F-006</span>
+      </div>
       <h3>Queue wait dominates on maintenance_client -&gt; motor_controller</h3>
       <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.4</code></p>
       <div class="grid">
@@ -339,7 +430,7 @@
       <div class="finding-head">
         <span class="badge warning">warning</span>
         <span class="rule">SPOF-001</span>
-        <span class="fid">F-005</span>
+        <span class="fid">F-007</span>
       </div>
       <h3>motor_controller is a single point of failure</h3>
       <p class="condition"><strong>Condition:</strong> <code>on_critical_path AND in_degree &gt; 2</code></p>

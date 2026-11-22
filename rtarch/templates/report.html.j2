@@ -161,6 +161,13 @@
     <span>Deadline: <strong>{{ scenario.get('deadline_ms') }} ms</strong></span>
     <span>Generated: <strong>{{ generated_at }}</strong></span>
   </div>
+  {% if provenance %}
+  <div class="meta">
+    <span>Source: <strong>{{ provenance.path }}</strong></span>
+    <span>Size: <strong>{{ provenance.size }} bytes</strong></span>
+    <span>SHA-256: <strong>{{ provenance.sha256 }}</strong></span>
+  </div>
+  {% endif %}
 </header>
 
 <main>

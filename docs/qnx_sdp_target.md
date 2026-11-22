@@ -143,7 +143,7 @@ The real slog2 lines carry the full prefix, which is exactly what the parser's
 prefix tolerance is for:
 
 ```
-Nov 15 15:34:38.470  diagnostics_client.282647  rtarch  0  RTARCH v=1 ts_ns=30969952596 phase=SEND ...
+Nov 15 15:42:36.357      diagnostics_client.282646               rtarch*     0  RTARCH v=1 ts_ns=32192607144 phase=SEND trace_id=3001 msg_id=1 src_pid=282646 src_name=diagnostics_client dst_pid=282642 dst_name=brake_controller msg_type=DIAG_REQ prio=10
 ```
 
 ## 5. Analyse
@@ -180,7 +180,7 @@ The decisive numbers:
 
 | Metric | Flawed | Fixed |
 |---|---|---|
-| brake p95 processing | 12.45 ms | **0.44 ms** |
+| brake p95 processing | 10.19 ms | **0.35 ms** |
 | perception→brake p95 queue wait | 7.88 ms | **0.83 ms** |
 | telemetry→brake p95 queue wait | 10.11 ms | **0.95 ms** |
 | diagnostics→brake p95 queue wait | 12.64 ms | **0.99 ms** |

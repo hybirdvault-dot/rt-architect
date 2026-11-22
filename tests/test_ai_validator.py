@@ -1,9 +1,6 @@
 """Tests for the optional AI explainer and its output validator."""
 
-import os
 import time
-
-import pytest
 
 from rtarch.ai import deterministic_fallback, explain_findings
 from rtarch.models import Finding
@@ -11,18 +8,18 @@ from rtarch.validator import validate_ai_output
 
 
 def _finding(**overrides):
-    values = dict(
-        finding_id="F-001",
-        rule_id="BOTTLENECK-001",
-        severity="critical",
-        title="svc is an architectural bottleneck",
-        condition="in_degree > 3 AND p95_processing_ns > deadline_ns * 0.5",
-        node="svc",
-        observed={"in_degree": 3, "p95_processing_ms": 7.0},
-        thresholds={"max_in_degree": 3},
-        evidence=["svc has in-degree 3"],
-        recommendation="Split the service into fast-path and slow-path handlers.",
-    )
+    values = {
+        "finding_id": "F-001",
+        "rule_id": "BOTTLENECK-001",
+        "severity": "critical",
+        "title": "svc is an architectural bottleneck",
+        "condition": "in_degree > 3 AND p95_processing_ns > deadline_ns * 0.5",
+        "node": "svc",
+        "observed": {"in_degree": 3, "p95_processing_ms": 7.0},
+        "thresholds": {"max_in_degree": 3},
+        "evidence": ["svc has in-degree 3"],
+        "recommendation": "Split the service into fast-path and slow-path handlers.",
+    }
     values.update(overrides)
     return Finding(**values)
 

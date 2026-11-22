@@ -159,8 +159,15 @@
     <span>Scenario: <strong>brake_demo</strong></span>
     <span>Target: <strong>QNX 8.0 QEMU</strong></span>
     <span>Deadline: <strong>5.0 ms</strong></span>
-    <span>Generated: <strong>2026-11-09 06:47:00 UTC</strong></span>
+    <span>Generated: <strong>last event ts_ns=21742352071793</strong></span>
   </div>
+  
+  <div class="meta">
+    <span>Source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/sim_flawed_slog2.txt</strong></span>
+    <span>Size: <strong>355323 bytes</strong></span>
+    <span>SHA-256: <strong>2eb4a020250e6afc27410b5186a997ce19151319390350d334fc19eb3a805a4e</strong></span>
+  </div>
+  
 </header>
 
 <main>
@@ -190,9 +197,9 @@
             
             <tr><td>in_degree</td><td>3</td></tr>
             
-            <tr><td>p95_processing_ns</td><td>13167331</td></tr>
+            <tr><td>p95_processing_ns</td><td>8166559</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>13.167</td></tr>
+            <tr><td>p95_processing_ms</td><td>8.167</td></tr>
             
             <tr><td>deadline_ms</td><td>5.0</td></tr>
             
@@ -211,7 +218,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller has in-degree 3 (&gt;2)</li><li>brake_controller p95 processing time is 13.17 ms</li><li>the deadline is 5.00 ms</li><li>processing exceeds 50% of the deadline</li>
+        <li>brake_controller has in-degree 3 (&gt;2)</li><li>brake_controller p95 processing time is 8.17 ms</li><li>the deadline is 5.00 ms</li><li>processing exceeds 50% of the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Split the service into fast-path and slow-path handlers, or separate high-priority control traffic from low-priority telemetry traffic.</p>
       
@@ -230,9 +237,9 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_processing_ns</td><td>13167331</td></tr>
+            <tr><td>p95_processing_ns</td><td>8166559</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>13.167</td></tr>
+            <tr><td>p95_processing_ms</td><td>8.167</td></tr>
             
             <tr><td>deadline_ns</td><td>5000000</td></tr>
             
@@ -251,7 +258,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller p95 processing time is 13.17 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
+        <li>brake_controller p95 processing time is 8.17 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
       
@@ -270,9 +277,9 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_processing_ns</td><td>12330634</td></tr>
+            <tr><td>p95_processing_ns</td><td>11203527</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>12.331</td></tr>
+            <tr><td>p95_processing_ms</td><td>11.204</td></tr>
             
             <tr><td>deadline_ns</td><td>5000000</td></tr>
             
@@ -291,7 +298,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>perception_service p95 processing time is 12.33 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
+        <li>perception_service p95 processing time is 11.20 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
       
@@ -310,7 +317,7 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>high_priority_blocked_count</td><td>51</td></tr>
+            <tr><td>high_priority_blocked_count</td><td>43</td></tr>
             
             <tr><td>low_priority_work_ratio</td><td>0.4286</td></tr>
             
@@ -327,7 +334,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller blocked 51 high-priority request(s)</li><li>low-priority work is 42.9% of received traffic (threshold 40%)</li>
+        <li>brake_controller blocked 43 high-priority request(s)</li><li>low-priority work is 42.9% of received traffic (threshold 40%)</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Use a priority-based message queue or separate channels so low-priority traffic cannot starve high-priority requests.</p>
       
@@ -346,15 +353,15 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_queue_wait_ns</td><td>8328223</td></tr>
+            <tr><td>p95_queue_wait_ns</td><td>7897325</td></tr>
             
-            <tr><td>p95_queue_wait_ms</td><td>8.328</td></tr>
+            <tr><td>p95_queue_wait_ms</td><td>7.897</td></tr>
             
-            <tr><td>p95_total_ns</td><td>9699611</td></tr>
+            <tr><td>p95_total_ns</td><td>9019320</td></tr>
             
-            <tr><td>p95_total_ms</td><td>9.7</td></tr>
+            <tr><td>p95_total_ms</td><td>9.019</td></tr>
             
-            <tr><td>ratio</td><td>0.8586</td></tr>
+            <tr><td>ratio</td><td>0.8756</td></tr>
             
           </table>
         </div>
@@ -369,7 +376,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>p95 queue wait is 8.33 ms</li><li>p95 total latency is 9.70 ms</li><li>queue wait is 85.9% of total latency</li>
+        <li>p95 queue wait is 7.90 ms</li><li>p95 total latency is 9.02 ms</li><li>queue wait is 87.6% of total latency</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
       
@@ -415,7 +422,7 @@
 
   
   <h2>Service Interaction Graph</h2>
-  <div class="graph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 984 418" width="100%" role="img" aria-label="Service interaction graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/></marker></defs><rect x="0" y="0" width="984" height="418" fill="#0d1117"/><line x1="216.0" y1="163.0" x2="288.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="158.0" text-anchor="middle" class="edge-label">SENSOR_FRAME</text><line x1="456.0" y1="163.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="492.0" y="158.0" text-anchor="middle" class="edge-label">BRAKE_CMD</text><line x1="216.0" y1="255.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="204.0" text-anchor="middle" class="edge-label">TELEMETRY_REQ</text><line x1="216.0" y1="71.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="112.0" text-anchor="middle" class="edge-label">DIAG_REQ</text><g class="node" transform="translate(48.0,48.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">diagnostics_client</text></g><g class="node critical" transform="translate(48.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">sensor_service</text></g><g class="node" transform="translate(48.0,232.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">telemetry_client</text></g><g class="node critical has-finding" transform="translate(288.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">perception_service</text></g><g class="node critical has-finding" transform="translate(528.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">brake_controller</text></g></svg></div>
+  <div class="graph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 984 418" width="100%" role="img" aria-label="Service interaction graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/></marker></defs><rect x="0" y="0" width="984" height="418" fill="#0d1117"/><line x1="216.0" y1="163.0" x2="288.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="158.0" text-anchor="middle" class="edge-label">SENSOR_FRAME</text><line x1="456.0" y1="163.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="492.0" y="158.0" text-anchor="middle" class="edge-label">BRAKE_CMD</text><line x1="216.0" y1="71.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="112.0" text-anchor="middle" class="edge-label">DIAG_REQ</text><line x1="216.0" y1="255.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="204.0" text-anchor="middle" class="edge-label">TELEMETRY_REQ</text><g class="node" transform="translate(48.0,48.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">diagnostics_client</text></g><g class="node critical" transform="translate(48.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">sensor_service</text></g><g class="node" transform="translate(48.0,232.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">telemetry_client</text></g><g class="node critical has-finding" transform="translate(288.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">perception_service</text></g><g class="node critical has-finding" transform="translate(528.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">brake_controller</text></g></svg></div>
   <div class="legend">
     <span><span class="swatch critical"></span> On critical path</span>
     <span><span class="swatch has-finding"></span> Has a finding</span>
@@ -438,10 +445,10 @@
         <td>brake_controller</td>
         <td>3</td>
         <td>0</td>
-        <td>13.167</td>
+        <td>8.167</td>
         <td>350</td>
         <td>yes</td>
-        <td>51</td>
+        <td>43</td>
         <td>42.9%</td>
       </tr>
       
@@ -460,10 +467,10 @@
         <td>perception_service</td>
         <td>1</td>
         <td>1</td>
-        <td>12.331</td>
+        <td>11.204</td>
         <td>200</td>
         <td>yes</td>
-        <td>6</td>
+        <td>0</td>
         <td>0.0%</td>
       </tr>
       
@@ -507,40 +514,40 @@
         <td>diagnostics_client &rarr; brake_controller</td>
         <td>DIAG_REQ</td>
         <td>50</td>
-        <td>0.127</td>
-        <td>7.922</td>
-        <td>9.454</td>
-        <td>16.098</td>
+        <td>0.106</td>
+        <td>7.309</td>
+        <td>8.383</td>
+        <td>15.458</td>
       </tr>
       
       <tr>
         <td>perception_service &rarr; brake_controller</td>
         <td>BRAKE_CMD</td>
         <td>200</td>
-        <td>0.123</td>
-        <td>8.328</td>
-        <td>1.729</td>
-        <td>9.700</td>
+        <td>0.091</td>
+        <td>7.897</td>
+        <td>1.157</td>
+        <td>9.019</td>
       </tr>
       
       <tr>
         <td>sensor_service &rarr; perception_service</td>
         <td>SENSOR_FRAME</td>
         <td>200</td>
-        <td>0.106</td>
-        <td>0.855</td>
-        <td>12.331</td>
-        <td>12.487</td>
+        <td>0.070</td>
+        <td>0.118</td>
+        <td>11.204</td>
+        <td>11.307</td>
       </tr>
       
       <tr>
         <td>telemetry_client &rarr; brake_controller</td>
         <td>TELEMETRY_REQ</td>
         <td>100</td>
-        <td>0.117</td>
-        <td>6.991</td>
-        <td>13.167</td>
-        <td>16.006</td>
+        <td>0.074</td>
+        <td>8.015</td>
+        <td>8.179</td>
+        <td>16.126</td>
       </tr>
       
     </tbody>

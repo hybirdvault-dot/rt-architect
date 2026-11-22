@@ -28,12 +28,17 @@ struct _msg_info {
 /* Set by the simulation harness to unblock servers at shutdown. */
 extern int sim_shutdown;
 
+/* QNX channel flag: a signal interrupts a blocked MsgReceive. */
+#define _NTO_CHF_UNBLOCK 0x0002u
+
 int ChannelCreate(unsigned flags);
 int ChannelDestroy(int chid);
 long MsgSend(int coid, const void *smsg, size_t sbytes,
              void *rmsg, size_t rbytes);
 int MsgReceive(int chid, void *rmsg, size_t rbytes, struct _msg_info *info);
 int MsgReply(int rcvid, int status, const void *rmsg, size_t rbytes);
+int MsgError(int rcvid, int error);
+int MsgSendPulse(int coid, int priority, int code, int value);
 int ConnectAttach(uint32_t nd, pid_t pid, int chid, unsigned index,
                   unsigned flags);
 int ConnectDetach(int coid);

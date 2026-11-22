@@ -5,7 +5,7 @@
 # -Dmain=<name> so sim_main.c can drive them as threads.
 
 CC      := gcc
-CFLAGS  := -Wall -Wextra -O2 -Iinclude -I../qnx8_demo/include
+CFLAGS  := -Wall -Wextra -O2 -D_GNU_SOURCE -DRTARCH_SIM -Iinclude -I../qnx8_demo/include
 LDFLAGS := -lpthread -lrt
 
 SIM     := rtarch_sim

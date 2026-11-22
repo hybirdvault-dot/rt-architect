@@ -8,12 +8,11 @@ Latency model (per request, keyed by ``trace_id`` + ``msg_id``):
 """
 
 from collections import defaultdict
-from typing import Dict, List, Tuple
 
 from .models import EdgeMetrics, NodeMetrics, Phase, RTArchEvent
 
 
-def percentile(data: List[int], p: float) -> int:
+def percentile(data: list[int], p: float) -> int:
     """Nearest-rank percentile over integers (deterministic, no interpolation)."""
     if not data:
         return 0
@@ -23,20 +22,20 @@ def percentile(data: List[int], p: float) -> int:
 
 
 def group_triples(
-    events: List[RTArchEvent],
-) -> Dict[Tuple[int, int], Dict[str, RTArchEvent]]:
+    events: list[RTArchEvent],
+) -> dict[tuple[int, int], dict[str, RTArchEvent]]:
     """Group events by ``(trace_id, msg_id)`` and index them by phase."""
-    triples: Dict[Tuple[int, int], Dict[str, RTArchEvent]] = defaultdict(dict)
+    triples: dict[tuple[int, int], dict[str, RTArchEvent]] = defaultdict(dict)
     for event in events:
         triples[(event.trace_id, event.msg_id)][event.phase.value] = event
     return dict(triples)
 
 
 def _completed_triples(
-    triples: Dict[Tuple[int, int], Dict[str, RTArchEvent]],
-) -> List[Tuple[RTArchEvent, RTArchEvent, RTArchEvent]]:
+    triples: dict[tuple[int, int], dict[str, RTArchEvent]],
+) -> list[tuple[RTArchEvent, RTArchEvent, RTArchEvent]]:
     """Return ``(SEND, RECV, REPLY)`` for every fully observed request."""
-    completed: List[Tuple[RTArchEvent, RTArchEvent, RTArchEvent]] = []
+    completed: list[tuple[RTArchEvent, RTArchEvent, RTArchEvent]] = []
     for phases in triples.values():
         send = phases.get("SEND")
         recv = phases.get("RECV")
@@ -46,33 +45,33 @@ def _completed_triples(
     return completed
 
 
-def compute_edge_metrics(events: List[RTArchEvent]) -> Dict[str, EdgeMetrics]:
+def compute_edge_metrics(events: list[RTArchEvent]) -> dict[str, EdgeMetrics]:
     """Compute per-edge latency metrics from complete SEND/RECV/REPLY triples."""
     triples = group_triples(events)
 
-    bucket: Dict[str, Dict[str, object]] = defaultdict(
-        lambda: {"queue": [], "processing": [], "total": [], "msg_types": set()}
-    )
+    queue_by_edge: dict[str, list[int]] = defaultdict(list)
+    processing_by_edge: dict[str, list[int]] = defaultdict(list)
+    total_by_edge: dict[str, list[int]] = defaultdict(list)
+    types_by_edge: dict[str, set] = defaultdict(set)
 
     for send, recv, reply in _completed_triples(triples):
         key = f"{send.src_name}->{recv.dst_name}"
-        entry = bucket[key]
-        entry["queue"].append(recv.ts_ns - send.ts_ns)
-        entry["processing"].append(reply.ts_ns - recv.ts_ns)
-        entry["total"].append(reply.ts_ns - send.ts_ns)
-        entry["msg_types"].add(send.msg_type)
+        queue_by_edge[key].append(recv.ts_ns - send.ts_ns)
+        processing_by_edge[key].append(reply.ts_ns - recv.ts_ns)
+        total_by_edge[key].append(reply.ts_ns - send.ts_ns)
+        types_by_edge[key].add(send.msg_type)
 
-    metrics: Dict[str, EdgeMetrics] = {}
-    for key, data in bucket.items():
+    metrics: dict[str, EdgeMetrics] = {}
+    for key in sorted(queue_by_edge):
         src, dst = key.split("->", 1)
-        queue = data["queue"]
-        processing = data["processing"]
-        total = data["total"]
+        queue = queue_by_edge[key]
+        processing = processing_by_edge[key]
+        total = total_by_edge[key]
 
         metrics[key] = EdgeMetrics(
             src_name=src,
             dst_name=dst,
-            msg_type=",".join(sorted(data["msg_types"])),
+            msg_type=",".join(sorted(types_by_edge[key])),
             count=len(queue),
             p50_queue_wait_ns=percentile(queue, 50),
             p95_queue_wait_ns=percentile(queue, 95),
@@ -90,10 +89,10 @@ def compute_edge_metrics(events: List[RTArchEvent]) -> Dict[str, EdgeMetrics]:
 
 def compute_node_metrics(
     graph,
-    edge_metrics: Dict[str, EdgeMetrics],
-    events: List[RTArchEvent],
-    scenario: Dict,
-) -> Dict[str, NodeMetrics]:
+    edge_metrics: dict[str, EdgeMetrics],
+    events: list[RTArchEvent],
+    scenario: dict,
+) -> dict[str, NodeMetrics]:
     """Compute per-service metrics.
 
     Rule-3 inputs are derived here:
@@ -114,10 +113,11 @@ def compute_node_metrics(
     critical_path = set(scenario.get("critical_path", []))
     triples = group_triples(events)
 
-    received: Dict[str, Dict[str, int]] = defaultdict(
+    received: dict[str, dict[str, int]] = defaultdict(
         lambda: {"high": 0, "low": 0, "total": 0}
     )
-    blocked: Dict[str, int] = defaultdict(int)
+    blocked: dict[str, int] = defaultdict(int)
+    processing_samples: dict[str, list[int]] = defaultdict(list)
 
     for event in events:
         if event.phase is Phase.RECV:
@@ -128,16 +128,17 @@ def compute_node_metrics(
             else:
                 bucket["low"] += 1
 
-    for send, recv, _reply in _completed_triples(triples):
+    for send, recv, reply in _completed_triples(triples):
+        processing_samples[recv.dst_name].append(reply.ts_ns - recv.ts_ns)
         if recv.prio >= priority_threshold:
             queue_wait = recv.ts_ns - send.ts_ns
             if queue_wait > blocked_threshold_ns:
                 blocked[recv.dst_name] += 1
 
-    node_metrics: Dict[str, NodeMetrics] = {}
+    node_metrics: dict[str, NodeMetrics] = {}
     for node in graph.nodes():
         incoming = [em for em in edge_metrics.values() if em.dst_name == node]
-        p95_processing = max((em.p95_processing_ns for em in incoming), default=0)
+        p95_processing = percentile(processing_samples.get(node, []), 95)
         total_received = sum(em.count for em in incoming)
 
         node_received = received.get(node, {"high": 0, "low": 0, "total": 0})

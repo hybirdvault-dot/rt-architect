@@ -52,6 +52,7 @@
   .sev-info { color: #58a6ff; }
   .delta-good { color: #3fb950; font-weight: 600; }
   .delta-bad { color: #f85149; font-weight: 600; }
+  .delta-neutral { color: #8b949e; }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
@@ -76,6 +77,15 @@
     <span>Deadline: <strong>{{ scenario.get('deadline_ms') }} ms</strong></span>
     <span>Flawed log: <strong>{{ flawed.events }} events</strong></span>
     <span>Fixed log: <strong>{{ fixed.events }} events</strong></span>
+  </div>
+  <div class="meta">
+    <span>Flawed source: <strong>{{ flawed_provenance.path }}</strong> ({{ flawed_provenance.size }} bytes, SHA-256 {{ flawed_provenance.sha256 }})</span>
+  </div>
+  <div class="meta">
+    <span>Fixed source: <strong>{{ fixed_provenance.path }}</strong> ({{ fixed_provenance.size }} bytes, SHA-256 {{ fixed_provenance.sha256 }})</span>
+  </div>
+  <div class="meta">
+    <span>Generated: <strong>{{ generated_at }}</strong></span>
   </div>
 </header>
 
@@ -135,7 +145,7 @@
         <td>{{ row.name }}</td>
         <td class="num before">{{ row.before_p95_ms }}</td>
         <td class="num after">{{ row.after_p95_ms }}</td>
-        <td class="num {{ 'delta-good' if row.after_p95_ms != '-' and row.before_p95_ms != '-' and row.after_p95_ms|float < row.before_p95_ms|float else 'delta-bad' }}">{{ delta(
+        <td class="num {{ delta_class((row.before_p95_ms|float * 1e6) if row.before_p95_ms != '-' else none, (row.after_p95_ms|float * 1e6) if row.after_p95_ms != '-' else none) }}">{{ delta(
               (row.before_p95_ms|float * 1e6) if row.before_p95_ms != '-' else none,
               (row.after_p95_ms|float * 1e6) if row.after_p95_ms != '-' else none) }}</td>
         <td class="num">{{ row.before_in_degree if row.before_in_degree is not none else '-' }}</td>
@@ -160,12 +170,12 @@
         <td>{{ row.edge }}</td>
         <td class="num before">{{ row.before_qw_ms }}</td>
         <td class="num after">{{ row.after_qw_ms }}</td>
-        <td class="num {{ 'delta-good' if row.after_qw_ms != '-' and row.before_qw_ms != '-' and row.after_qw_ms|float < row.before_qw_ms|float else 'delta-bad' }}">{{ delta(
+        <td class="num {{ delta_class((row.before_qw_ms|float * 1e6) if row.before_qw_ms != '-' else none, (row.after_qw_ms|float * 1e6) if row.after_qw_ms != '-' else none) }}">{{ delta(
               (row.before_qw_ms|float * 1e6) if row.before_qw_ms != '-' else none,
               (row.after_qw_ms|float * 1e6) if row.after_qw_ms != '-' else none) }}</td>
         <td class="num before">{{ row.before_proc_ms }}</td>
         <td class="num after">{{ row.after_proc_ms }}</td>
-        <td class="num {{ 'delta-good' if row.after_proc_ms != '-' and row.before_proc_ms != '-' and row.after_proc_ms|float < row.before_proc_ms|float else 'delta-bad' }}">{{ delta(
+        <td class="num {{ delta_class((row.before_proc_ms|float * 1e6) if row.before_proc_ms != '-' else none, (row.after_proc_ms|float * 1e6) if row.after_proc_ms != '-' else none) }}">{{ delta(
               (row.before_proc_ms|float * 1e6) if row.before_proc_ms != '-' else none,
               (row.after_proc_ms|float * 1e6) if row.after_proc_ms != '-' else none) }}</td>
       </tr>

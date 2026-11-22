@@ -52,6 +52,7 @@
   .sev-info { color: #58a6ff; }
   .delta-good { color: #3fb950; font-weight: 600; }
   .delta-bad { color: #f85149; font-weight: 600; }
+  .delta-neutral { color: #8b949e; }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
@@ -76,6 +77,15 @@
     <span>Deadline: <strong>5.0 ms</strong></span>
     <span>Flawed log: <strong>12 events</strong></span>
     <span>Fixed log: <strong>12 events</strong></span>
+  </div>
+  <div class="meta">
+    <span>Flawed source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/flawed_demo_slog2.txt</strong> (2012 bytes, SHA-256 700930041796c3f805443d859250f66ef59c0ac1cb53e4fab5442a10aca00aa1)</span>
+  </div>
+  <div class="meta">
+    <span>Fixed source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/fixed_demo_slog2.txt</strong> (2057 bytes, SHA-256 3793ef61f34d1679adc50a2baa0072cbccf325ae67ead77bc1ee35677009c701)</span>
+  </div>
+  <div class="meta">
+    <span>Generated: <strong>last event ts_ns=1012000000</strong></span>
   </div>
 </header>
 
@@ -163,7 +173,7 @@
         <td>brake_controller</td>
         <td class="num before">7.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num">3</td>
         <td class="num">-</td>
       </tr>
@@ -172,7 +182,7 @@
         <td>brake_controller_fast</td>
         <td class="num before">-</td>
         <td class="num after">2.000</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num">-</td>
         <td class="num">1</td>
       </tr>
@@ -181,7 +191,7 @@
         <td>brake_controller_slow</td>
         <td class="num before">-</td>
         <td class="num after">1.000</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num">-</td>
         <td class="num">2</td>
       </tr>
@@ -190,7 +200,7 @@
         <td>diagnostics_client</td>
         <td class="num before">0.000</td>
         <td class="num after">0.000</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
         <td class="num">0</td>
         <td class="num">0</td>
       </tr>
@@ -199,7 +209,7 @@
         <td>perception_service</td>
         <td class="num before">2.000</td>
         <td class="num after">2.000</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
         <td class="num">1</td>
         <td class="num">1</td>
       </tr>
@@ -208,7 +218,7 @@
         <td>sensor_service</td>
         <td class="num before">0.000</td>
         <td class="num after">0.000</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
         <td class="num">0</td>
         <td class="num">0</td>
       </tr>
@@ -217,7 +227,7 @@
         <td>telemetry_client</td>
         <td class="num before">0.000</td>
         <td class="num after">0.000</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
         <td class="num">0</td>
         <td class="num">0</td>
       </tr>
@@ -240,70 +250,70 @@
         <td>diagnostics_client-&gt;brake_controller</td>
         <td class="num before">1.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">1.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
       <tr>
         <td>diagnostics_client-&gt;brake_controller_slow</td>
         <td class="num before">-</td>
         <td class="num after">0.500</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">-</td>
         <td class="num after">1.000</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
       <tr>
         <td>perception_service-&gt;brake_controller</td>
         <td class="num before">2.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">7.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
       <tr>
         <td>perception_service-&gt;brake_controller_fast</td>
         <td class="num before">-</td>
         <td class="num after">0.200</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">-</td>
         <td class="num after">2.000</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
       <tr>
         <td>sensor_service-&gt;perception_service</td>
         <td class="num before">0.500</td>
         <td class="num after">0.500</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
         <td class="num before">2.000</td>
         <td class="num after">2.000</td>
-        <td class="num delta-bad">0</td>
+        <td class="num delta-neutral">0</td>
       </tr>
       
       <tr>
         <td>telemetry_client-&gt;brake_controller</td>
         <td class="num before">3.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">1.000</td>
         <td class="num after">-</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
       <tr>
         <td>telemetry_client-&gt;brake_controller_slow</td>
         <td class="num before">-</td>
         <td class="num after">0.500</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
         <td class="num before">-</td>
         <td class="num after">1.000</td>
-        <td class="num delta-bad">-</td>
+        <td class="num delta-neutral">-</td>
       </tr>
       
     </tbody>

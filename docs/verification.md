@@ -6,7 +6,7 @@
 .venv/bin/python -m pytest
 ```
 
-50 tests cover:
+54 tests cover:
 
 - **Parser** — golden log parsing, field values, `RTARCH` pre-filter, malformed
   line skipping, empty files, and tolerance of real slog2 line prefixes.
@@ -36,15 +36,17 @@
 ## Manual end-to-end check
 
 ```bash
-.venv/bin/rtarch tests/golden/synthetic_flawed.log \
+.venv/bin/rtarch analyze tests/golden/synthetic_flawed.log \
   --scenario scenarios/brake_demo.json \
   --output /tmp/flawed.html
 # Expected: 2 critical, 3 warning, 0 info
 
-.venv/bin/rtarch tests/golden/synthetic_fixed.log \
+.venv/bin/rtarch analyze tests/golden/synthetic_fixed.log \
   --scenario scenarios/brake_demo_fixed.json \
   --output /tmp/fixed.html
-# Expected: 0 critical, 0 warning, 0 info
+# Expected: 0 critical, 1 warning, 0 info
+# (the warning is SPOF-001: the brake service is still a single point of
+# failure, which is the correct verdict — splitting threads is not redundancy)
 ```
 
 ## Definition of done
@@ -53,7 +55,7 @@
 - [x] Graph topology matches the service call relationships
 - [x] Metrics are correct on the golden logs
 - [x] All five rules fire on the flawed log
-- [x] The fixed log produces zero findings
+- [x] The fixed log produces 1 warning (SPOF-001) — the correct verdict, not zero
 - [x] The HTML report renders without horizontal overflow
 - [x] The CLI exits 0 and writes the report
 - [x] `pytest` is green

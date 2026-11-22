@@ -5,7 +5,6 @@ module is allowed to change without a schema-version bump.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -74,10 +73,10 @@ class Finding(BaseModel):
     severity: str  # critical | warning | info
     title: str
     condition: str
-    node: Optional[str] = None
-    observed: Dict[str, object] = Field(default_factory=dict)
-    thresholds: Dict[str, object] = Field(default_factory=dict)
-    evidence: List[str] = Field(default_factory=list)
+    node: str | None = None
+    observed: dict[str, object] = Field(default_factory=dict)
+    thresholds: dict[str, object] = Field(default_factory=dict)
+    evidence: list[str] = Field(default_factory=list)
     recommendation: str = ""
-    ai_explanation: Optional[str] = None
-    ai_refactor_plan: Optional[List[str]] = None
+    ai_explanation: str | None = None
+    ai_refactor_plan: list[str] | None = None

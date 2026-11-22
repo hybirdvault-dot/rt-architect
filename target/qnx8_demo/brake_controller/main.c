@@ -26,13 +26,6 @@
 #define BRAKE_DELAY_MS      1   /* high-priority brake command service time  */
 #define LOWPRIO_DELAY_MS    8   /* telemetry / diagnostics service time       */
 
-static volatile sig_atomic_t _running = 1;
-
-static void _on_signal(int sig)
-{
-    (void)sig;
-    _running = 0;
-}
 
 static void _set_priority(int prio)
 {
@@ -40,7 +33,10 @@ static void _set_priority(int prio)
 
     memset(&sp, 0, sizeof(sp));
     sp.sched_priority = prio;
-    (void)pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        fprintf(stderr, "pthread_setschedparam(prio=%d) failed: %s\n",
+                prio, strerror(errno));
+    }
 }
 
 static const char *_msg_type(uint32_t kind)
@@ -82,8 +78,8 @@ int main(void)
 {
     int chid;
 
-    signal(SIGINT, _on_signal);
-    signal(SIGTERM, _on_signal);
+    signal(SIGINT, rtarch_on_signal);
+    signal(SIGTERM, rtarch_on_signal);
 
     _set_priority(PRIO);
 
@@ -92,7 +88,7 @@ int main(void)
         return 1;
     }
 
-    chid = ChannelCreate(0);
+    chid = rtarch_channel_create();
     if (chid < 0) {
         perror("brake_controller: ChannelCreate");
         return 1;
@@ -105,7 +101,7 @@ int main(void)
 
     printf("brake_controller: listening on chid %d\n", chid);
 
-    while (_running) {
+    while (!rtarch_shutdown_requested()) {
         struct _msg_info info;
         rtarch_payload_t req;
         rtarch_reply_t rep;
@@ -134,6 +130,7 @@ int main(void)
         }
         if (req.kind < RTARCH_KIND_SENSOR_FRAME || req.kind > RTARCH_KIND_DIAG) {
             fprintf(stderr, "brake_controller: ignoring unknown kind %u\n", req.kind);
+            MsgError(rcvid, ENOTSUP);
             continue;
         }
 

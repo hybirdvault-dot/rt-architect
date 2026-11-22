@@ -31,13 +31,13 @@
 #define SLOW_PRIO       10
 
 /*
- * Fast path replies immediately.  The slow path is deliberately bounded: the
- * bottleneck rule compares the node's worst-case processing against 50% of
- * the deadline, so an unbounded slow path would keep BOTTLENECK-001 alive even
- * though the critical path is now isolated from it.
+ * Service times match the flawed variant exactly (1 ms brake, 8 ms low
+ * priority) so the ONLY difference between the two variants is the thread
+ * split.  Previously the fixed variant used 0 ms, which confounded the
+ * before/after with removed work.
  */
-#define FAST_DELAY_MS   0
-#define SLOW_DELAY_MS   0
+#define FAST_DELAY_MS   1
+#define SLOW_DELAY_MS   8
 
 struct path_ctx {
     int     chid;
@@ -46,13 +46,6 @@ struct path_ctx {
     const char *channel_name;
 };
 
-static volatile sig_atomic_t _running = 1;
-
-static void _on_signal(int sig)
-{
-    (void)sig;
-    _running = 0;
-}
 
 static void _set_priority(int prio)
 {
@@ -61,7 +54,27 @@ static void _set_priority(int prio)
     memset(&sp, 0, sizeof(sp));
     sp.sched_priority = prio;
     /* Best effort: a real-time priority needs privileges we may not have. */
-    (void)pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        fprintf(stderr, "pthread_setschedparam(prio=%d) failed: %s\n",
+                prio, strerror(errno));
+    }
+}
+
+/*
+ * Wake a worker blocked in MsgReceive.  A signal sent to the process may be
+ * delivered to a thread other than the one blocked in MsgReceive, so the
+ * shutdown flag alone does not guarantee the worker returns.  A pulse is
+ * delivered to the channel and makes MsgReceive return (rcvid 0); the worker
+ * then re-checks the shutdown flag and leaves its loop.
+ */
+static void _wake_channel(int chid)
+{
+    int coid = ConnectAttach(ND_LOCAL_NODE, getpid(), chid, 0, 0);
+
+    if (coid >= 0) {
+        MsgSendPulse(coid, 10, 0, 0);
+        ConnectDetach(coid);
+    }
 }
 
 static const char *_msg_type(uint32_t kind)
@@ -100,7 +113,7 @@ static void *_path_thread(void *arg)
 
     _set_priority(ctx->prio);
 
-    while (_running) {
+    while (!rtarch_shutdown_requested()) {
         struct _msg_info info;
         rtarch_payload_t req;
         rtarch_reply_t rep;
@@ -124,6 +137,7 @@ static void *_path_thread(void *arg)
         }
         if (req.kind < RTARCH_KIND_SENSOR_FRAME || req.kind > RTARCH_KIND_DIAG) {
             fprintf(stderr, "%s: ignoring unknown kind %u\n", ctx->channel_name, req.kind);
+            MsgError(rcvid, ENOTSUP);
             continue;
         }
 
@@ -159,8 +173,8 @@ int main(void)
     pthread_t fast_thread;
     pthread_t slow_thread;
 
-    signal(SIGINT, _on_signal);
-    signal(SIGTERM, _on_signal);
+    signal(SIGINT, rtarch_on_signal);
+    signal(SIGTERM, rtarch_on_signal);
 
     if (rtarch_init("brake_controller") < 0) {
         fprintf(stderr, "brake_controller_fixed: slog2 init failed\n");
@@ -210,8 +224,31 @@ int main(void)
     printf("brake_controller_fixed: fast chid %d, slow chid %d\n",
            fast->chid, slow->chid);
 
-    pthread_join(fast_thread, NULL);
-    pthread_join(slow_thread, NULL);
+    /*
+     * Wait for the shutdown signal before rejoining: the workers cannot exit
+     * until it is set, and on real QNX MsgReceive is unblocked by the signal
+     * so they leave promptly.  The overall wait is bounded so a lost signal
+     * cannot hang the process.
+     */
+    {
+        int waits;
+
+        for (waits = 0; waits < 3000 && !rtarch_shutdown_requested(); waits++) {
+            usleep(10000);              /* 10 ms */
+        }
+    }
+
+    _wake_channel(fast->chid);
+    _wake_channel(slow->chid);
+
+    if (rtarch_timed_join(fast_thread, NULL, 2000) == ETIMEDOUT) {
+        fprintf(stderr, "brake_controller_fixed: fast thread did not exit, detaching\n");
+        pthread_detach(fast_thread);
+    }
+    if (rtarch_timed_join(slow_thread, NULL, 2000) == ETIMEDOUT) {
+        fprintf(stderr, "brake_controller_fixed: slow thread did not exit, detaching\n");
+        pthread_detach(slow_thread);
+    }
 
     return 0;
 }

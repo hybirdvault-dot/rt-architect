@@ -1,0 +1,16 @@
+# Pinned runtime dependency closure resolved from .venv (uv unavailable).
+annotated-doc==0.0.5
+annotated-types==0.8.0
+Jinja2==3.1.6
+markdown-it-py==4.2.0
+MarkupSafe==3.0.4
+mdurl==0.1.2
+networkx==3.7
+pydantic==2.14.3
+pydantic_core==2.50.4
+Pygments==2.21.0
+rich==15.0.0
+shellingham==1.5.4
+typer==0.28.0
+typing-extensions==4.16.0
+typing-inspection==0.4.5

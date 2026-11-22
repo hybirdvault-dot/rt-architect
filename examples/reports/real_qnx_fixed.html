@@ -159,14 +159,21 @@
     <span>Scenario: <strong>brake_demo</strong></span>
     <span>Target: <strong>QNX 8.0 QEMU</strong></span>
     <span>Deadline: <strong>5.0 ms</strong></span>
-    <span>Generated: <strong>2026-11-15 15:53:45 UTC</strong></span>
+    <span>Generated: <strong>last event ts_ns=36530037002</strong></span>
   </div>
+  
+  <div class="meta">
+    <span>Source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/real_qnx_fixed_slog2.txt</strong></span>
+    <span>Size: <strong>435040 bytes</strong></span>
+    <span>SHA-256: <strong>5ceb8a48316b7295d20fd35cab857883365dac02774b183fd14273bf73674246</strong></span>
+  </div>
+  
 </header>
 
 <main>
   <div class="summary">
     <div class="card critical"><span class="number">1</span><span class="label">Critical</span></div>
-    <div class="card warning"><span class="number">3</span><span class="label">Warning</span></div>
+    <div class="card warning"><span class="number">5</span><span class="label">Warning</span></div>
     <div class="card info"><span class="number">0</span><span class="label">Info</span></div>
     <div class="card neutral"><span class="number">5</span><span class="label">Services</span></div>
     <div class="card neutral"><span class="number">4</span><span class="label">IPC Edges</span></div>
@@ -257,6 +264,48 @@
         <span class="rule">QUEUE-WAIT-001</span>
         <span class="fid">F-003</span>
       </div>
+      <h3>Queue wait dominates on diagnostics_client -&gt; brake_controller</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.5</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_queue_wait_ns</td><td>985970</td></tr>
+            
+            <tr><td>p95_queue_wait_ms</td><td>0.986</td></tr>
+            
+            <tr><td>p95_total_ns</td><td>1517832</td></tr>
+            
+            <tr><td>p95_total_ms</td><td>1.518</td></tr>
+            
+            <tr><td>ratio</td><td>0.6496</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>queue_wait_ratio</td><td>0.5</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>p95 queue wait is 0.99 ms</li><li>p95 total latency is 1.52 ms</li><li>queue wait is 65.0% of total latency</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
+        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="fid">F-004</span>
+      </div>
       <h3>Queue wait dominates on perception_service -&gt; brake_controller</h3>
       <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.5</code></p>
       <div class="grid">
@@ -296,8 +345,50 @@
     <article class="finding warning">
       <div class="finding-head">
         <span class="badge warning">warning</span>
+        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="fid">F-005</span>
+      </div>
+      <h3>Queue wait dominates on telemetry_client -&gt; brake_controller</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.5</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_queue_wait_ns</td><td>945110</td></tr>
+            
+            <tr><td>p95_queue_wait_ms</td><td>0.945</td></tr>
+            
+            <tr><td>p95_total_ns</td><td>1259304</td></tr>
+            
+            <tr><td>p95_total_ms</td><td>1.259</td></tr>
+            
+            <tr><td>ratio</td><td>0.7505</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>queue_wait_ratio</td><td>0.5</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>p95 queue wait is 0.95 ms</li><li>p95 total latency is 1.26 ms</li><li>queue wait is 75.1% of total latency</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      
+    </article>
+    
+    <article class="finding warning">
+      <div class="finding-head">
+        <span class="badge warning">warning</span>
         <span class="rule">SPOF-001</span>
-        <span class="fid">F-004</span>
+        <span class="fid">F-006</span>
       </div>
       <h3>brake_controller is a single point of failure</h3>
       <p class="condition"><strong>Condition:</strong> <code>on_critical_path AND in_degree &gt; 2</code></p>
@@ -356,7 +447,7 @@
         <td>brake_controller</td>
         <td>3</td>
         <td>0</td>
-        <td>0.442</td>
+        <td>0.352</td>
         <td>351</td>
         <td>yes</td>
         <td>5</td>

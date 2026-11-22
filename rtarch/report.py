@@ -1,13 +1,15 @@
 """Generate the self-contained HTML analysis report.
 
 The report is deterministic: it embeds a static SVG service-interaction graph,
-the evidence-backed findings, and the full node/edge metric tables.  No
-JavaScript is required to read it.
+the evidence-backed findings, the full node/edge metric tables, and a
+provenance footer (source log path, size, SHA-256) so a committed report can be
+tied back to the exact capture that produced it.  The generation timestamp is
+derived from the log's last event rather than the wall clock, so two runs on
+the same log produce byte-identical output.  No JavaScript is required.
 """
 
+import hashlib
 import os
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
 from xml.sax.saxutils import escape
 
 import networkx as nx
@@ -20,14 +22,40 @@ _TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templa
 _SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 
-def _severity_counts(findings: List[Finding]) -> Dict[str, int]:
+def _sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def file_provenance(path: str) -> dict[str, object]:
+    """Return the path, size and SHA-256 of the log a report was built from."""
+    absolute = os.path.abspath(path)
+    return {
+        "path": absolute,
+        "size": os.path.getsize(absolute),
+        "sha256": _sha256(absolute),
+    }
+
+
+def log_generated_at(events: list) -> str:
+    """A deterministic generation timestamp derived from the log itself."""
+    if not events:
+        return "n/a"
+    last_ns = max(event.ts_ns for event in events)
+    return f"last event ts_ns={last_ns}"
+
+
+def _severity_counts(findings: list[Finding]) -> dict[str, int]:
     counts = {"critical": 0, "warning": 0, "info": 0}
     for finding in findings:
         counts[finding.severity] = counts.get(finding.severity, 0) + 1
     return counts
 
 
-def _layers(graph) -> List[List[str]]:
+def _layers(graph) -> list[list[str]]:
     """Return graph nodes grouped into visual layers.
 
     Uses topological generations for DAGs (deterministic, left-to-right) and
@@ -42,8 +70,8 @@ def _layers(graph) -> List[List[str]]:
 
 def _render_svg_graph(
     graph,
-    node_metrics: Dict[str, NodeMetrics],
-    findings: List[Finding],
+    node_metrics: dict[str, NodeMetrics],
+    findings: list[Finding],
 ) -> str:
     """Render the service interaction graph as a static, dependency-free SVG."""
     if graph is None or graph.number_of_nodes() == 0:
@@ -72,7 +100,7 @@ def _render_svg_graph(
                 y_start + row_idx * y_gap,
             )
 
-    parts: List[str] = []
+    parts: list[str] = []
     parts.append(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width:.0f} '
         f'{height:.0f}" width="100%" role="img" aria-label="Service interaction graph">'
@@ -127,12 +155,14 @@ def _render_svg_graph(
 
 
 def generate_report(
-    findings: List[Finding],
-    node_metrics: Dict[str, NodeMetrics],
-    edge_metrics: Dict[str, EdgeMetrics],
-    scenario: Dict,
+    findings: list[Finding],
+    node_metrics: dict[str, NodeMetrics],
+    edge_metrics: dict[str, EdgeMetrics],
+    scenario: dict,
     output_path: str,
     graph=None,
+    source_path: str | None = None,
+    generated_at: str | None = None,
 ) -> str:
     """Render the HTML report to ``output_path`` and return the written path."""
     env = Environment(
@@ -143,6 +173,8 @@ def generate_report(
 
     svg_graph = _render_svg_graph(graph, node_metrics, findings)
 
+    provenance = file_provenance(source_path) if source_path else None
+
     html = template.render(
         scenario=scenario,
         findings=findings,
@@ -150,7 +182,8 @@ def generate_report(
         edge_metrics=edge_metrics,
         severity_counts=_severity_counts(findings),
         svg_graph=svg_graph,
-        generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        generated_at=generated_at or "n/a",
+        provenance=provenance,
     )
 
     absolute_path = os.path.abspath(output_path)

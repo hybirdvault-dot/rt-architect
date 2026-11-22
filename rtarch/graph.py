@@ -1,14 +1,13 @@
 """Build the service interaction graph from RTARCH events."""
 
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
 
 import networkx as nx
 
 from .models import Phase, RTArchEvent
 
 
-def build_graph(events: List[RTArchEvent]) -> nx.DiGraph:
+def build_graph(events: list[RTArchEvent]) -> nx.DiGraph:
     """Build a directed graph.
 
     Nodes are service names; an edge ``A -> B`` means *A sent at least one
@@ -19,7 +18,7 @@ def build_graph(events: List[RTArchEvent]) -> nx.DiGraph:
     add reversed duplicates and turn the service graph into a cyclic graph.
     """
     graph = nx.DiGraph()
-    edge_msg_types: Dict[Tuple[str, str], Set[str]] = defaultdict(set)
+    edge_msg_types: dict[tuple[str, str], set[str]] = defaultdict(set)
 
     for event in events:
         if event.phase is Phase.REPLY:

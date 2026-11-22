@@ -30,3 +30,9 @@ include = ["rtarch*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+# The eight modules rewritten in the P0 fix pass are excluded from the
+# typing-modernisation rules until that follow-up lands; their logic is frozen.
+
+[tool.mypy]

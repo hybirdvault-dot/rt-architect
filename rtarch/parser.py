@@ -7,7 +7,6 @@ documented ``grep "RTARCH"`` pre-filter.
 """
 
 import re
-from typing import List, Optional, Tuple
 
 from .models import Phase, RTArchEvent
 
@@ -32,10 +31,23 @@ _REQUIRED_FIELDS = (
     "prio",
 )
 
+# The locked RTARCH v1 vocabulary.  Validating against it rejects a truncated
+# final field (e.g. a cut-off "BRAKE_CMD" that would otherwise be silently
+# accepted as "BRAKE").  Adding a message type is a deliberate schema change:
+# extend this set, do not remove the check.
+KNOWN_MSG_TYPES = frozenset({
+    "SENSOR_FRAME", "BRAKE_CMD", "TELEMETRY_REQ", "DIAG_REQ",
+    "SENSOR_ACK", "BRAKE_ACK", "TELEMETRY_ACK", "DIAG_ACK",
+    "CALIB_REQ", "CALIB_ACK", "CONFIG_REQ", "CONFIG_ACK",
+    "DOSE_CMD", "DOSE_ACK", "FLOW_READING", "FLOW_ACK",
+    "JOINT_FRAME", "JOINT_ACK", "LOG_REQ", "LOG_ACK",
+    "MAINT_REQ", "MAINT_ACK", "TORQUE_CMD", "TORQUE_ACK",
+})
 
-def filter_rtarch_lines(raw_log_path: str) -> List[str]:
+
+def filter_rtarch_lines(raw_log_path: str) -> list[str]:
     """Return only the lines that carry RTARCH events, stripped of whitespace."""
-    matched: List[str] = []
+    matched: list[str] = []
     with open(raw_log_path, "r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
             if RTARCH_MARKER in line:
@@ -43,7 +55,7 @@ def filter_rtarch_lines(raw_log_path: str) -> List[str]:
     return matched
 
 
-def parse_event(line: str) -> Optional[RTArchEvent]:
+def parse_event(line: str) -> RTArchEvent | None:
     """Parse one RTARCH line, returning ``None`` when it is malformed."""
     match = _RTARCH_LINE_RE.search(line.strip())
     if not match:
@@ -54,7 +66,7 @@ def parse_event(line: str) -> Optional[RTArchEvent]:
         return None
 
     try:
-        return RTArchEvent(
+        event = RTArchEvent(
             v=int(pairs["v"]),
             ts_ns=int(pairs["ts_ns"]),
             phase=Phase(pairs["phase"]),
@@ -70,14 +82,19 @@ def parse_event(line: str) -> Optional[RTArchEvent]:
     except (ValueError, KeyError):
         return None
 
+    if event.msg_type not in KNOWN_MSG_TYPES:
+        return None
 
-def parse_log_with_stats(raw_log_path: str) -> Tuple[List[RTArchEvent], int]:
+    return event
+
+
+def parse_log_with_stats(raw_log_path: str) -> tuple[list[RTArchEvent], int]:
     """Parse a raw log file.
 
     Returns ``(events, skipped)`` where ``skipped`` counts RTARCH-marked lines
     that could not be parsed (malformed / missing fields).
     """
-    events: List[RTArchEvent] = []
+    events: list[RTArchEvent] = []
     skipped = 0
 
     for line in filter_rtarch_lines(raw_log_path):
@@ -90,7 +107,7 @@ def parse_log_with_stats(raw_log_path: str) -> Tuple[List[RTArchEvent], int]:
     return events, skipped
 
 
-def parse_log(raw_log_path: str) -> List[RTArchEvent]:
+def parse_log(raw_log_path: str) -> list[RTArchEvent]:
     """Parse a raw log file and return only the successfully parsed events."""
     events, _ = parse_log_with_stats(raw_log_path)
     return events

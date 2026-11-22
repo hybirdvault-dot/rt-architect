@@ -20,13 +20,13 @@ echo "Starting RTArchitect FIXED demo..."
 ./bin/brake_controller_fixed &
 BRAKE=$!
 
-./bin/perception_service brake_fast brake_controller &
+./bin/perception_service rtarch/brake_fast brake_controller &
 PERCEPTION=$!
 
-./bin/telemetry_client brake_slow brake_controller &
+./bin/telemetry_client rtarch/brake_slow brake_controller &
 TELEMETRY=$!
 
-./bin/diagnostics_client brake_slow brake_controller &
+./bin/diagnostics_client rtarch/brake_slow brake_controller &
 DIAGNOSTICS=$!
 
 ./bin/sensor_service perception_service &

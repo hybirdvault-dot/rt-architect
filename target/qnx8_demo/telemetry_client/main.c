@@ -17,13 +17,6 @@
 #define ITERATIONS  100
 #define PERIOD_US   50000  /* 50 ms */
 
-static volatile sig_atomic_t _running = 1;
-
-static void _on_signal(int sig)
-{
-    (void)sig;
-    _running = 0;
-}
 
 static void _set_priority(int prio)
 {
@@ -31,7 +24,10 @@ static void _set_priority(int prio)
 
     memset(&sp, 0, sizeof(sp));
     sp.sched_priority = prio;
-    (void)pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        fprintf(stderr, "pthread_setschedparam(prio=%d) failed: %s\n",
+                prio, strerror(errno));
+    }
 }
 
 int main(int argc, char **argv)
@@ -50,8 +46,8 @@ int main(int argc, char **argv)
 
     log_name = (argc > 2) ? argv[2] : argv[1];
 
-    signal(SIGINT, _on_signal);
-    signal(SIGTERM, _on_signal);
+    signal(SIGINT, rtarch_on_signal);
+    signal(SIGTERM, rtarch_on_signal);
 
     _set_priority(PRIO);
 
@@ -66,7 +62,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    while (_running && msg_id < ITERATIONS) {
+    while (!rtarch_shutdown_requested() && msg_id < ITERATIONS) {
         rtarch_payload_t req;
         rtarch_reply_t rep;
 

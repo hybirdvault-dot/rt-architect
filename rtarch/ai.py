@@ -24,7 +24,6 @@ import json
 import os
 import queue
 import threading
-from typing import Dict, List, Optional
 
 from .models import Finding
 from .validator import validate_ai_output
@@ -70,10 +69,10 @@ GENERIC_FALLBACK = (
 
 
 def explain_findings(
-    findings: List[Finding],
-    scenario: Dict,
+    findings: list[Finding],
+    scenario: dict,
     enabled: bool = False,
-) -> List[Finding]:
+) -> list[Finding]:
     """Attach an explanation to every finding.
 
     With ``enabled=False`` (the default) this is a no-op and the deterministic
@@ -90,14 +89,14 @@ def explain_findings(
                 raise ValueError("AI output failed validation")
             finding.ai_explanation = result["explanation"]
             finding.ai_refactor_plan = list(result.get("refactor_plan") or [])
-        except Exception:
+        except Exception:  # noqa: BLE001 - any provider failure must fall back
             finding.ai_explanation = deterministic_fallback(finding, scenario)
             finding.ai_refactor_plan = []
 
     return findings
 
 
-def deterministic_fallback(finding: Finding, scenario: Dict) -> str:
+def deterministic_fallback(finding: Finding, scenario: dict) -> str:
     """A deterministic, always-available explanation."""
     template = FALLBACK_TEMPLATES.get(finding.rule_id, GENERIC_FALLBACK)
 
@@ -150,9 +149,9 @@ def deterministic_fallback(finding: Finding, scenario: Dict) -> str:
     )
 
 
-def _call_ai_guarded(finding: Finding, scenario: Dict) -> Optional[Dict]:
+def _call_ai_guarded(finding: Finding, scenario: dict) -> dict | None:
     """Run the AI call in a daemon thread and hard-bound it to 5 seconds."""
-    result_queue: "queue.Queue" = queue.Queue(maxsize=1)
+    result_queue: queue.Queue = queue.Queue(maxsize=1)
 
     def worker() -> None:
         try:
@@ -173,7 +172,7 @@ def _call_ai_guarded(finding: Finding, scenario: Dict) -> Optional[Dict]:
     return result
 
 
-def _build_messages(finding: Finding, scenario: Dict) -> List[Dict[str, str]]:
+def _build_messages(finding: Finding, scenario: dict) -> list[dict[str, str]]:
     return [
         {
             "role": "system",
@@ -200,7 +199,7 @@ def _build_messages(finding: Finding, scenario: Dict) -> List[Dict[str, str]]:
     ]
 
 
-def _call_ai(finding: Finding, scenario: Dict) -> Optional[Dict]:
+def _call_ai(finding: Finding, scenario: dict) -> dict | None:
     """Call an OpenAI-compatible chat endpoint. Raises on any failure."""
     base_url = os.environ.get("API_BASE_URL")
     api_key = os.environ.get("API_KEY")

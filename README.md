@@ -29,7 +29,7 @@ optional later layer — the tool never depends on it.
 - [x] Self-contained HTML report with a static SVG service graph
 - [x] Typer + Rich CLI
 - [x] `pytest` suite — 54 tests
-- [x] Three scenarios: `brake_demo` (5 ms), `medical_pump` (2 ms), `industrial_robot` (1 ms)
+- [x] Three scenarios: `brake_demo` (deadline 5 ms), `medical_pump` (deadline 2 ms), `industrial_robot` (deadline 1 ms)
 - [x] Side-by-side comparison report (`rtarch compare`)
 - [x] QNX 8.0 target instrumentation (`rtarch_ipc.h`) — API verified against the QNX 8.0 library reference
 - [x] Five demo services with the flawed single-threaded `brake_controller`
@@ -51,13 +51,20 @@ optional later layer — the tool never depends on it.
 python3 -m venv .venv
 .venv/bin/pip install -e .
 
+# To run the tests and the linter/type-checker:
+.venv/bin/pip install -e '.[dev]'
+```
+
+> The base install is enough to run the analysis. The `.[dev]` extra adds
+> `pytest` (and, for development, `ruff`/`mypy`); without it `pytest` is not
+> available.
 # Analyze the flawed demo log
-.venv/bin/rtarch tests/golden/synthetic_flawed.log \
+.venv/bin/rtarch analyze tests/golden/synthetic_flawed.log \
   --scenario scenarios/brake_demo.json \
   --output examples/reports/flawed_report.html
 
 # Analyze the fixed demo log
-.venv/bin/rtarch tests/golden/synthetic_fixed.log \
+.venv/bin/rtarch analyze tests/golden/synthetic_fixed.log \
   --scenario scenarios/brake_demo_fixed.json \
   --output examples/reports/fixed_report.html
 ```
@@ -162,9 +169,9 @@ captured off the serial console.
 
 | Metric | Flawed | Fixed |
 |---|---|---|
-| brake p95 processing | 12.45 ms | **0.44 ms** |
+| brake p95 processing | 10.19 ms | **0.35 ms** |
 | perception→brake p95 queue wait | 7.88 ms | **0.83 ms** |
-| findings | 6 | 4 |
+| findings | 8 | 6 |
 
 All five rules fire on the flawed log; `BOTTLENECK-001` and the brake's
 `CRITICAL-PATH-001` clear on the fixed log, while `SPOF-001` correctly remains —

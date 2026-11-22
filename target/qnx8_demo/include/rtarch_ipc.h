@@ -23,12 +23,74 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
+#include <pthread.h>
+#include <errno.h>
 
 #include <sys/slog2.h>
 #include <sys/neutrino.h>
 #include <sys/netmgr.h>
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
+
+/* ------------------------------------------------------------------ */
+/*  Graceful shutdown                                                 */
+/*                                                                     */
+/*  A signal handler is process-wide: when several services run in one */
+/*  process (the Linux sim) the last registration wins, so every       */
+/*  service must observe the SAME flag.  On real QNX each service is   */
+/*  its own process, so the flag is defined once per process.          */
+/* ------------------------------------------------------------------ */
+
+#if defined(RTARCH_SIM)
+extern volatile sig_atomic_t g_rtarch_shutdown;
+#else
+volatile sig_atomic_t g_rtarch_shutdown = 0;
+#endif
+
+static inline void rtarch_on_signal(int sig)
+{
+    (void)sig;
+    g_rtarch_shutdown = 1;
+}
+
+static inline int rtarch_shutdown_requested(void)
+{
+    return g_rtarch_shutdown;
+}
+
+/*
+ * Create a channel whose MsgReceive is interrupted by a signal.  Without
+ * _NTO_CHF_UNBLOCK a worker blocked in MsgReceive never observes the
+ * shutdown flag, so the process cannot stop.
+ */
+static inline int rtarch_channel_create(void)
+{
+    return ChannelCreate(_NTO_CHF_UNBLOCK);
+}
+
+/*
+ * Timed join: waits up to timeout_ms for the worker.  Returns 0 if the
+ * thread joined, ETIMEDOUT if the budget expired, else an error.
+ */
+static inline int rtarch_timed_join(pthread_t thread, void **value, int timeout_ms)
+{
+    struct timespec deadline;
+
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec  += timeout_ms / 1000;
+    deadline.tv_nsec += (long)(timeout_ms % 1000) * 1000000L;
+    if (deadline.tv_nsec >= 1000000000L) {
+        deadline.tv_sec  += 1;
+        deadline.tv_nsec -= 1000000000L;
+    }
+#ifdef __QNX__
+    return pthread_timedjoin(thread, value, &deadline);
+#else
+    return pthread_timedjoin_np(thread, value, &deadline);
+#endif
+}
+
 
 /* ------------------------------------------------------------------ */
 /*  Payload                                                           */

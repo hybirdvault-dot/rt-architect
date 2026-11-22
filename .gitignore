@@ -8,7 +8,9 @@ dist/
 
 # C / simulation build artefacts
 *.o
+*.elf
 target/linux_sim/rtarch_sim
+target/qnx8_demo/bin/
 
 # Virtual environments
 .venv/
@@ -24,3 +26,6 @@ htmlcov/
 # Generated artifacts
 report.html
 examples/logs/smoke_*.log
+
+# Verification harness tooling
+.verify-venv/
