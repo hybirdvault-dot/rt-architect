@@ -543,5 +543,54 @@ def layer8_mutation(scorecard: Scorecard) -> None:
          f"baseline rc={base_rc} ({base_out}); mutated rc={mut_rc} ({mut_out})")
 
 
+def _queue_wait_count():
+    """How many QUEUE-WAIT findings the real QNX flawed log produces."""
+    with tempfile.TemporaryDirectory() as td:
+        out = os.path.join(td, "r.html")
+        _run([PY, "-m", "rtarch", "analyze",
+              os.path.join(REPO, "examples", "logs", "real_qnx_flawed_slog2.txt"),
+              "--scenario", "scenarios/brake_demo.json", "-o", out])
+        return _read(out).count("QUEUE-WAIT-001")
+
+
+def layer9_mutations(scorecard: Scorecard) -> None:
+    """L0.1 / L0.2 — the harness must notice when P0-2 or P1-1 is reverted."""
+
+    # L0.1: break the validator's number check -> the validator tests must fail.
+    validator = os.path.join(REPO, "rtarch", "validator.py")
+    original = _read(validator)
+    try:
+        with open(validator, "w") as fh:
+            fh.write(original.replace("    return (not violations), violations",
+                                      "    return True, []"))
+        r = _run([PY, "-m", "pytest", "tests/test_ai_validator.py", "-q", "--no-header"],
+                 timeout=300)
+        failed = r.returncode != 0
+    finally:
+        with open(validator, "w") as fh:
+            fh.write(original)
+    _add(scorecard, 9, "L0.1 P0-2 revert -> tests fail", failed, "P0",
+         "number check disabled -> pytest failed" if failed
+         else "number check disabled but pytest still passed")
+
+    # L0.2: revert the dedup key -> the per-edge QUEUE-WAIT findings collapse.
+    rules = os.path.join(REPO, "rtarch", "rules.py")
+    original = _read(rules)
+    try:
+        with open(rules, "w") as fh:
+            fh.write(original.replace(
+                "        key = (finding.rule_id, finding.node, finding.title)",
+                "        key = (finding.rule_id, finding.node)"))
+        mutated_count = _queue_wait_count()
+    finally:
+        with open(rules, "w") as fh:
+            fh.write(original)
+    baseline_count = _queue_wait_count()
+    _add(scorecard, 9, "L0.2 P1-1 revert -> per-edge findings collapse",
+         baseline_count == 3 and mutated_count == 1, "P0",
+         f"baseline QUEUE-WAIT={baseline_count}, reverted={mutated_count} (want 3 vs 1)")
+
+
+
 LAYERS = {1: layer1, 2: layer2, 3: layer3, 4: layer4, 5: layer5, 6: layer6,
-          7: layer7_extras, 8: layer8_mutation}
+          7: layer7_extras, 8: layer8_mutation, 9: layer9_mutations}
