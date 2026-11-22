@@ -72,7 +72,14 @@ def layer1(scorecard: Scorecard) -> None:
     collected = _run([PY, "-m", "pytest", "--collect-only", "-q"]).stdout
     per_file = [int(x) for x in re.findall(r":\s*(\d+)\s*$", collected, re.MULTILINE)]
     summary = re.search(r"(\d+)\s+tests? collected", collected)
-    n_collected = sum(per_file) if per_file else (int(summary.group(1)) if summary else 0)
+    if per_file or summary:
+        n_collected = sum(per_file) if per_file else int(summary.group(1))
+    else:
+        # pytest may be absent from a base install; count the test functions directly
+        n_collected = sum(
+            len(re.findall(r"^\s*def test_", f.read_text(), re.MULTILINE))
+            for f in Path(REPO, "tests").glob("test_*.py")
+        )
     if m:
         _add(scorecard, 1, "test-count claim", int(m.group(1)) == n_collected, "P2",
              f"claimed {m.group(1)}, collected {n_collected}")

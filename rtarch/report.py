@@ -31,10 +31,18 @@ def _sha256(path: str) -> str:
 
 
 def file_provenance(path: str) -> dict[str, object]:
-    """Return the path, size and SHA-256 of the log a report was built from."""
+    """Return the path, size and SHA-256 of the log a report was built from.
+
+    The path is recorded relative to the working directory when possible, so a
+    report reproduces on another machine instead of embedding an absolute path.
+    """
     absolute = os.path.abspath(path)
+    try:
+        shown = os.path.relpath(absolute, os.getcwd())
+    except ValueError:                       # unrelated prefix
+        shown = absolute
     return {
-        "path": absolute,
+        "path": shown,
         "size": os.path.getsize(absolute),
         "sha256": _sha256(absolute),
     }
