@@ -46,12 +46,25 @@ KNOWN_MSG_TYPES = frozenset({
 
 
 def filter_rtarch_lines(raw_log_path: str) -> list[str]:
-    """Return only the lines that carry RTARCH events, stripped of whitespace."""
+    """Return only the lines that carry RTARCH events, stripped of whitespace.
+
+    Raises ``UnicodeDecodeError`` with a clear message when the file is not valid
+    UTF-8, rather than silently replacing bytes.
+    """
     matched: list[str] = []
-    with open(raw_log_path, "r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if RTARCH_MARKER in line:
-                matched.append(line.strip())
+    with open(raw_log_path, "rb") as handle:
+        raw = handle.read()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise UnicodeDecodeError(
+            exc.encoding, exc.object, exc.start, exc.end,
+            f"{raw_log_path} is not valid UTF-8 (byte {exc.start}); "
+            "a slog2 capture should be text",
+        ) from exc
+    for line in text.splitlines():
+        if RTARCH_MARKER in line:
+            matched.append(line.strip())
     return matched
 
 

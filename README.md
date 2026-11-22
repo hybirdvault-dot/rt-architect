@@ -113,7 +113,7 @@ finding and that the fixed log clears `BOTTLENECK-001`.
 rtarch compare examples/logs/sim_flawed_slog2.txt \
               examples/logs/sim_fixed_slog2.txt \
               --scenario scenarios/brake_demo.json \
-              --output examples/reports/comparison.html
+              --output examples/reports/comparison_report.html
 ```
 
 A two-column report: findings cleared, p95 deltas, queue-wait deltas, and the

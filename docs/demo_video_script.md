@@ -171,9 +171,9 @@ Then the money shot — the side-by-side comparison:
   examples/logs/sim_flawed_slog2.txt \
   examples/logs/sim_fixed_slog2.txt \
   --scenario scenarios/brake_demo.json \
-  --output examples/reports/comparison.html
+  --output examples/reports/comparison_report.html
 
-xdg-open examples/reports/comparison.html
+xdg-open examples/reports/comparison_report.html
 ```
 
 **Voiceover:** "Same tool, same scenario, same thresholds. The brake is now two

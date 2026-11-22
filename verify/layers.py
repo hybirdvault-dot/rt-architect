@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -592,5 +593,300 @@ def layer9_mutations(scorecard: Scorecard) -> None:
 
 
 
+
+
+def _analyze_returns(log_path, scenario="scenarios/brake_demo.json", cwd=REPO):
+    """Run the CLI in a subprocess; return (returncode, stdout+stderr)."""
+    r = _run([PY, "-m", "rtarch", "analyze", log_path, "--scenario", scenario,
+              "-o", os.path.join(tempfile.mkdtemp(), "r.html")], cwd=cwd, timeout=300)
+    return r.returncode, (r.stdout + r.stderr)
+
+
+def _evidence_numbers():
+    """Recompute the §6 evidence table from the raw captures."""
+    from rtarch.graph import build_graph
+    from rtarch.metrics import compute_edge_metrics, compute_node_metrics
+    from rtarch.parser import parse_log
+    from rtarch.rules import run_rules
+
+    out = {}
+    for tag, name in (("flawed", "real_qnx_flawed_slog2.txt"),
+                      ("fixed", "real_qnx_fixed_slog2.txt")):
+        events = parse_log(os.path.join(REPO, "examples", "logs", name))
+        graph = build_graph(events)
+        edges = compute_edge_metrics(events)
+        nodes = compute_node_metrics(graph, edges, events, json_load(
+            os.path.join(REPO, "scenarios", "brake_demo.json")))
+        findings = run_rules(nodes, edges, json_load(
+            os.path.join(REPO, "scenarios", "brake_demo.json")))
+        out[tag] = {
+            "brake_p95_ms": nodes["brake_controller"].p95_processing_ns / 1e6,
+            "queue": {k: v.p95_queue_wait_ns / 1e6 for k, v in edges.items()},
+            "findings": len(findings),
+        }
+    return out
+
+
+def json_load(path):
+    import json
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def layer10_coverage(scorecard: Scorecard) -> None:
+    """The 17 checks from the round-2 coverage gap (L1.4 ... L6.4)."""
+
+    # L1.4 — every §6 evidence cell recomputes from the raw capture
+    try:
+        ev = _evidence_numbers()
+        rows = [
+            ("brake p95 flawed", 10.19, ev["flawed"]["brake_p95_ms"]),
+            ("brake p95 fixed", 0.35, ev["fixed"]["brake_p95_ms"]),
+            ("perception->brake queue flawed", 7.88,
+             ev["flawed"]["queue"].get("perception_service->brake_controller", -1)),
+            ("telemetry->brake queue flawed", 10.11,
+             ev["flawed"]["queue"].get("telemetry_client->brake_controller", -1)),
+            ("diagnostics->brake queue flawed", 12.64,
+             ev["flawed"]["queue"].get("diagnostics_client->brake_controller", -1)),
+            ("findings flawed", 8, ev["flawed"]["findings"]),
+            ("findings fixed", 6, ev["fixed"]["findings"]),
+        ]
+        bad = [f"{n}: cited {c} vs recomputed {round(a, 3)}" for n, c, a in rows
+               if abs(c - a) >= 0.01]
+        _add(scorecard, 10, "L1.4 all §6 evidence cells recompute", not bad, "P1",
+             "all cells reproduce" if not bad else "; ".join(bad))
+    except Exception as exc:                                   # noqa: BLE001
+        _add(scorecard, 10, "L1.4 all §6 evidence cells recompute", False, "P1", repr(exc))
+
+    # L1.5 — every doc-referenced repository path exists
+    referenced = set()
+    for doc in list(Path(REPO, "docs").glob("*.md")) + [Path(REPO, "README.md")]:
+        text = re.sub(r"--output\s+\S+", "", doc.read_text())
+        for match in re.finditer(
+                r"(?<!local/)(?<!/data/)(?:target|examples|scenarios|docs|rtarch|tests|verify)"
+                r"/[A-Za-z0-9_./-]+", text):
+            if text[match.end():].lstrip().startswith("= local/"):
+                continue                      # mkqnximage snippet source, not a repo path
+            referenced.add(match.group(0))
+    missing = [p for p in sorted(referenced) if not os.path.exists(os.path.join(REPO, p))]
+    _add(scorecard, 10, "L1.5 every doc-referenced path exists", not missing, "P1",
+         f"{len(referenced)} paths checked" if not missing else "missing: " + ", ".join(missing[:6]))
+
+    # L2.3b — non-UTF-8 input
+    with tempfile.NamedTemporaryFile(delete=False) as fh:
+        fh.write(os.urandom(1024))
+        nonutf8 = fh.name
+    try:
+        rc, out = _analyze_returns(nonutf8)
+        ok = rc != 0 and "Traceback" not in out and ("UTF-8" in out or "not valid text" in out)
+        _add(scorecard, 10, "L2.3b non-UTF-8 rejected with a clear error", ok, "P1",
+             f"rc={rc} out={out.strip().splitlines()[-1][:90] if out.strip() else ''}")
+    finally:
+        os.unlink(nonutf8)
+
+    # L2.3e — deeply nested field
+    nested = "RTARCH v=1 ts_ns=1 phase=SEND trace_id=1 msg_id=1 src_pid=1 src_name=" + \
+             '{"a":' * 1000 + "1" + "}" * 1000 + \
+             " dst_pid=2 dst_name=b msg_type=BRAKE_CMD prio=10"
+    with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+        fh.write(nested + "\n")
+        deep = fh.name
+    try:
+        rc, out = _analyze_returns(deep)
+        ok = "Traceback" not in out and "RecursionError" not in out
+        _add(scorecard, 10, "L2.3e deeply nested field does not crash", ok, "P2",
+             f"rc={rc}")
+    finally:
+        os.unlink(deep)
+
+    # L2.5b — single-line log
+    with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+        fh.write("RTARCH v=1 ts_ns=1 phase=SEND trace_id=1 msg_id=1 src_pid=1 "
+                 "src_name=a dst_pid=2 dst_name=b msg_type=BRAKE_CMD prio=10\n")
+        single = fh.name
+    try:
+        rc, out = _analyze_returns(single)
+        ok = rc == 0 and "Traceback" not in out
+        _add(scorecard, 10, "L2.5b single-line log produces a report", ok, "P2", f"rc={rc}")
+    finally:
+        os.unlink(single)
+
+    # L2.5d — whitespace-only log
+    with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+        fh.write("   \n\t\n  \n")
+        ws = fh.name
+    try:
+        rc, out = _analyze_returns(ws)
+        ok = "No RTARCH events" in out and "Traceback" not in out
+        _add(scorecard, 10, "L2.5d whitespace-only log handled cleanly", ok, "P2",
+             f"rc={rc} {'no-events message' if 'No RTARCH events' in out else out[-60:]}")
+    finally:
+        os.unlink(ws)
+
+    # L2.5e — control characters
+    with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+        fh.write("RTARCH v=1 ts_ns=1 phase=SEND trace_id=1 msg_id=1 src_pid=1 "
+                 "src_name=a\x00\x07\x1b dst_pid=2 dst_name=b msg_type=BRAKE_CMD prio=10\n")
+        ctrl = fh.name
+    try:
+        rc, out = _analyze_returns(ctrl)
+        ok = "Traceback" not in out
+        _add(scorecard, 10, "L2.5e control characters do not crash", ok, "P2", f"rc={rc}")
+    finally:
+        os.unlink(ctrl)
+
+    # L2.6a — path traversal in the scenario flag
+    rc, out = _analyze_returns("tests/golden/synthetic_flawed.log",
+                               scenario="../../../etc/passwd")
+    ok = rc != 0 and "Traceback" not in out and "root:" not in out
+    _add(scorecard, 10, "L2.6a path traversal is rejected", ok, "P1",
+         f"rc={rc} {out.strip().splitlines()[-1][:70] if out.strip() else ''}")
+
+    # L2.6b — shell metacharacters in a filename
+    weird_dir = tempfile.mkdtemp()
+    weird = os.path.join(weird_dir, "foo;rm -rf ~$(id).log")
+    shutil.copy(os.path.join(REPO, "tests/golden/synthetic_flawed.log"), weird)
+    rc, out = _analyze_returns(weird)
+    _add(scorecard, 10, "L2.6b shell metacharacters treated literally", rc == 0, "P2",
+         f"rc={rc}")
+
+    # L2.6c — embedded JSON in a field
+    with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+        fh.write("RTARCH v=1 ts_ns=1 phase=SEND trace_id=1 msg_id=1 src_pid=1 "
+                 'src_name=a}, "injected": true, "x": {"y": 1 dst_pid=2 '
+                 "dst_name=b msg_type=BRAKE_CMD prio=10\n")
+        inj = fh.name
+    try:
+        rc, out = _analyze_returns(inj)
+        ok = rc == 0 and "Traceback" not in out
+        _add(scorecard, 10, "L2.6c embedded JSON stays a string field", ok, "P2", f"rc={rc}")
+    finally:
+        os.unlink(inj)
+
+    # L3.6b — SIGSEGV must not be swallowed
+    sim = os.path.join(REPO, "target", "linux_sim", "rtarch_sim")
+    segv_ok = False
+    if os.path.exists(sim):
+        proc = subprocess.Popen([sim, "fixed"], stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL,
+                                cwd=os.path.join(REPO, "target", "linux_sim"))
+        import time as _t
+        _t.sleep(1.2)
+        proc.send_signal(11)                       # SIGSEGV
+        try:
+            proc.wait(timeout=3)
+            segv_ok = proc.returncode not in (0, None)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+    _add(scorecard, 10, "L3.6b SIGSEGV is not swallowed", segv_ok, "P1",
+         "crashes with a non-zero status" if segv_ok else "still running or exited 0")
+
+    # L4.4 — governance files
+    missing = [f for f in ("LICENSE", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md")
+               if not os.path.exists(os.path.join(REPO, f))
+               or os.path.getsize(os.path.join(REPO, f)) == 0]
+    _add(scorecard, 10, "L4.4 OSS governance files present", not missing, "P1",
+         "all present" if not missing else "missing: " + ", ".join(missing))
+
+    # L4.7 — pip-audit
+    try:
+        auditor = _tool("pip-audit")
+        r = _run([auditor, "-r", os.path.join(REPO, "requirements.lock")], timeout=300)
+        ok = r.returncode == 0 and "No known vulnerabilities" in (r.stdout + r.stderr)
+        _add(scorecard, 10, "L4.7 pip-audit reports no vulnerabilities", ok, "P1",
+             (r.stdout + r.stderr).strip().splitlines()[-1][:90])
+    except Exception as exc:                                   # noqa: BLE001
+        _add(scorecard, 10, "L4.7 pip-audit reports no vulnerabilities", False, "P1", repr(exc))
+
+    # L5.3 — CLI from outside the repo root
+    r = _run([PY, "-m", "rtarch", "analyze",
+              os.path.join(REPO, "tests/golden/synthetic_flawed.log"),
+              "--scenario", os.path.join(REPO, "scenarios/brake_demo.json"),
+              "-o", "/tmp/outside_root.html"], cwd="/tmp", timeout=300)
+    _add(scorecard, 10, "L5.3 CLI works outside the repo root", r.returncode == 0, "P1",
+         f"rc={r.returncode}")
+
+    # L5.6 — cold install + first run within 10 minutes
+    import time as _time
+    with tempfile.TemporaryDirectory() as td:
+        venv = os.path.join(td, "v")
+        t0 = _time.time()
+        subprocess.run([sys.executable, "-m", "venv", venv], check=True, capture_output=True)
+        subprocess.run([os.path.join(venv, "bin", "pip"), "install", "-q", "-e", REPO],
+                       check=True, capture_output=True, timeout=600)
+        subprocess.run([os.path.join(venv, "bin", "rtarch"), "analyze",
+                        os.path.join(REPO, "tests/golden/synthetic_flawed.log"),
+                        "--scenario", os.path.join(REPO, "scenarios/brake_demo.json"),
+                        "-o", os.path.join(td, "r.html")], check=True, capture_output=True,
+                       timeout=300)
+        elapsed = _time.time() - t0
+    _add(scorecard, 10, "L5.6 cold install + first run <= 10 min", elapsed <= 600, "P1",
+         f"{elapsed:.0f} s")
+
+    # L6.3 / L6.4 — provenance timestamp and hash match the source log
+    ts_bad, sha_bad = [], []
+    for name in sorted(os.listdir(os.path.join(REPO, "examples", "reports"))):
+        if not name.endswith(".html"):
+            continue
+        html = _read(os.path.join(REPO, "examples", "reports", name))
+        paths = re.findall(r"source: <strong>([^<]+)</strong>", html, re.IGNORECASE)
+        stamps = re.findall(r"last event ts_ns=(\d+)", html)
+        shas = re.findall(r"SHA-256:?\s*(?:<strong>)?([0-9a-f]{64})", html)
+        if not (paths and stamps and shas):
+            sha_bad.append(f"{name}: incomplete footer")
+            continue
+        for src, sha in zip(paths, shas):
+            if not os.path.exists(src):
+                sha_bad.append(f"{name}: source missing {src}")
+                continue
+            with open(src, "rb") as fh:
+                digest = hashlib.sha256(fh.read()).hexdigest()
+            if digest != sha:
+                sha_bad.append(f"{name}: sha mismatch for {os.path.basename(src)}")
+        from rtarch.parser import parse_log
+        for src, stamp in zip(paths, stamps):
+            try:
+                events = parse_log(src)
+            except UnicodeDecodeError as exc:
+                ts_bad.append(f"{name}: source not valid UTF-8 ({exc.reason})")
+                continue
+            if events and stamp != str(max(e.ts_ns for e in events)):
+                ts_bad.append(f"{name}: ts {stamp} != {max(e.ts_ns for e in events)}")
+    _add(scorecard, 10, "L6.3 provenance timestamp matches the source log",
+         not ts_bad, "P1", "all match" if not ts_bad else "; ".join(ts_bad[:3]))
+    _add(scorecard, 10, "L6.4 provenance SHA matches the current log",
+         not sha_bad, "P1", "all match" if not sha_bad else "; ".join(sha_bad[:3]))
+
+
+
+
+def layer11_qnx(scorecard: Scorecard) -> None:
+    """Real-QNX checks.  These require a booted QNX 8.0 image; without one the
+    check is UNVERIFIED, never PASS."""
+
+    image = os.environ.get("RTARCH_QNX_IMAGE")
+    serial = os.environ.get("RTARCH_QNX_SERIAL")
+    if not (image and serial and os.path.exists(image)):
+        scorecard.add(CheckResult(11, "real-QNX shutdown + unknown-kind", "WARN", "P0",
+                                  "UNVERIFIED: no QNX image/serial configured (set "
+                                  "RTARCH_QNX_IMAGE and RTARCH_QNX_SERIAL). Not a PASS."))
+        return
+
+    log = _read(serial)
+    results = {}
+    for line in log.splitlines():
+        if "SHUTDOWN_TEST_RESULT" in line or "UNKNOWN_KIND_TEST_RESULT" in line:
+            key = line.split(" = ")[0].strip().split("RESULT ")[-1]
+            results[key] = line.strip()
+    ok = ("fixed SIGINT = CLEAN_EXIT_WITHIN_2S" in log
+          and "fixed SIGTERM = CLEAN_EXIT_WITHIN_2S" in log
+          and "SIGKILL control = DIES_AS_EXPECTED" in log
+          and "UNKNOWN_KIND_TEST_RESULT rtarch/brake_fast ENOTSUP" in log)
+    _add(scorecard, 11, "real-QNX shutdown + unknown-kind", ok, "P0",
+         "; ".join(results.values()) if results else "no markers found")
+
+
 LAYERS = {1: layer1, 2: layer2, 3: layer3, 4: layer4, 5: layer5, 6: layer6,
-          7: layer7_extras, 8: layer8_mutation, 9: layer9_mutations}
+          7: layer7_extras, 8: layer8_mutation, 9: layer9_mutations,
+          10: layer10_coverage, 11: layer11_qnx}

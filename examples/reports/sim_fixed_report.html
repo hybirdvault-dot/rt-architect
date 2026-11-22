@@ -159,21 +159,21 @@
     <span>Scenario: <strong>brake_demo</strong></span>
     <span>Target: <strong>QNX 8.0 QEMU</strong></span>
     <span>Deadline: <strong>5.0 ms</strong></span>
-    <span>Generated: <strong>last event ts_ns=21747481054770</strong></span>
+    <span>Generated: <strong>last event ts_ns=10800103345340</strong></span>
   </div>
   
   <div class="meta">
     <span>Source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/sim_fixed_slog2.txt</strong></span>
-    <span>Size: <strong>333463 bytes</strong></span>
-    <span>SHA-256: <strong>3f6685d25b9fe55b50fa6310fa539f0259f10189d10de094d31c35d1cd7532f0</strong></span>
+    <span>Size: <strong>355018 bytes</strong></span>
+    <span>SHA-256: <strong>8518699dc4a1ca1c60067579788eb56abc5f29b1f6f624ce22d73f0059ca0945</strong></span>
   </div>
   
 </header>
 
 <main>
   <div class="summary">
-    <div class="card critical"><span class="number">0</span><span class="label">Critical</span></div>
-    <div class="card warning"><span class="number">3</span><span class="label">Warning</span></div>
+    <div class="card critical"><span class="number">2</span><span class="label">Critical</span></div>
+    <div class="card warning"><span class="number">2</span><span class="label">Warning</span></div>
     <div class="card info"><span class="number">0</span><span class="label">Info</span></div>
     <div class="card neutral"><span class="number">5</span><span class="label">Services</span></div>
     <div class="card neutral"><span class="number">4</span><span class="label">IPC Edges</span></div>
@@ -182,28 +182,26 @@
   <h2>Findings</h2>
   
     
-    <article class="finding warning">
+    <article class="finding critical">
       <div class="finding-head">
-        <span class="badge warning">warning</span>
-        <span class="rule">QUEUE-WAIT-001</span>
+        <span class="badge critical">critical</span>
+        <span class="rule">BOTTLENECK-001</span>
         <span class="fid">F-001</span>
       </div>
-      <h3>Queue wait dominates on perception_service -&gt; brake_controller</h3>
-      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.5</code></p>
+      <h3>brake_controller is an architectural bottleneck</h3>
+      <p class="condition"><strong>Condition:</strong> <code>in_degree &gt; 2 AND p95_processing_ns &gt; deadline_ns * 0.5</code></p>
       <div class="grid">
         <div>
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_queue_wait_ns</td><td>129526</td></tr>
+            <tr><td>in_degree</td><td>3</td></tr>
             
-            <tr><td>p95_queue_wait_ms</td><td>0.13</td></tr>
+            <tr><td>p95_processing_ns</td><td>8150549</td></tr>
             
-            <tr><td>p95_total_ns</td><td>236541</td></tr>
+            <tr><td>p95_processing_ms</td><td>8.151</td></tr>
             
-            <tr><td>p95_total_ms</td><td>0.237</td></tr>
-            
-            <tr><td>ratio</td><td>0.5476</td></tr>
+            <tr><td>deadline_ms</td><td>5.0</td></tr>
             
           </table>
         </div>
@@ -211,41 +209,77 @@
           <h4>Thresholds</h4>
           <table>
             
-            <tr><td>queue_wait_ratio</td><td>0.5</td></tr>
+            <tr><td>max_in_degree</td><td>2</td></tr>
+            
+            <tr><td>processing_deadline_fraction</td><td>0.5</td></tr>
             
           </table>
         </div>
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>p95 queue wait is 0.13 ms</li><li>p95 total latency is 0.24 ms</li><li>queue wait is 54.8% of total latency</li>
+        <li>brake_controller has in-degree 3 (&gt;2)</li><li>brake_controller p95 processing time is 8.15 ms</li><li>the deadline is 5.00 ms</li><li>processing exceeds 50% of the deadline</li>
       </ul>
-      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      <p class="recommendation"><strong>Recommendation:</strong> Split the service into fast-path and slow-path handlers, or separate high-priority control traffic from low-priority telemetry traffic.</p>
+      
+    </article>
+    
+    <article class="finding critical">
+      <div class="finding-head">
+        <span class="badge critical">critical</span>
+        <span class="rule">CRITICAL-PATH-001</span>
+        <span class="fid">F-002</span>
+      </div>
+      <h3>brake_controller violates the critical path deadline</h3>
+      <p class="condition"><strong>Condition:</strong> <code>p95_processing_ns &gt; deadline_ns</code></p>
+      <div class="grid">
+        <div>
+          <h4>Observed</h4>
+          <table>
+            
+            <tr><td>p95_processing_ns</td><td>8150549</td></tr>
+            
+            <tr><td>p95_processing_ms</td><td>8.151</td></tr>
+            
+            <tr><td>deadline_ns</td><td>5000000</td></tr>
+            
+            <tr><td>deadline_ms</td><td>5.0</td></tr>
+            
+          </table>
+        </div>
+        <div>
+          <h4>Thresholds</h4>
+          <table>
+            
+            <tr><td>deadline_ns</td><td>5000000</td></tr>
+            
+          </table>
+        </div>
+      </div>
+      <h4>Evidence</h4>
+      <ul class="evidence">
+        <li>brake_controller p95 processing time is 8.15 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
+      </ul>
+      <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
       
     </article>
     
     <article class="finding warning">
       <div class="finding-head">
         <span class="badge warning">warning</span>
-        <span class="rule">QUEUE-WAIT-001</span>
-        <span class="fid">F-002</span>
+        <span class="rule">HEAD-OF-LINE-001</span>
+        <span class="fid">F-003</span>
       </div>
-      <h3>Queue wait dominates on telemetry_client -&gt; brake_controller</h3>
-      <p class="condition"><strong>Condition:</strong> <code>p95_queue_wait_ns &gt; p95_total_ns * 0.5</code></p>
+      <h3>brake_controller has head-of-line blocking</h3>
+      <p class="condition"><strong>Condition:</strong> <code>high_priority_blocked_count &gt; 0 AND low_priority_work_ratio &gt; 0.4</code></p>
       <div class="grid">
         <div>
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_queue_wait_ns</td><td>147280</td></tr>
+            <tr><td>high_priority_blocked_count</td><td>5</td></tr>
             
-            <tr><td>p95_queue_wait_ms</td><td>0.147</td></tr>
-            
-            <tr><td>p95_total_ns</td><td>233545</td></tr>
-            
-            <tr><td>p95_total_ms</td><td>0.234</td></tr>
-            
-            <tr><td>ratio</td><td>0.6306</td></tr>
+            <tr><td>low_priority_work_ratio</td><td>0.4286</td></tr>
             
           </table>
         </div>
@@ -253,16 +287,16 @@
           <h4>Thresholds</h4>
           <table>
             
-            <tr><td>queue_wait_ratio</td><td>0.5</td></tr>
+            <tr><td>low_priority_work_ratio</td><td>0.4</td></tr>
             
           </table>
         </div>
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>p95 queue wait is 0.15 ms</li><li>p95 total latency is 0.23 ms</li><li>queue wait is 63.1% of total latency</li>
+        <li>brake_controller blocked 5 high-priority request(s)</li><li>low-priority work is 42.9% of received traffic (threshold 40%)</li>
       </ul>
-      <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
+      <p class="recommendation"><strong>Recommendation:</strong> Use a priority-based message queue or separate channels so low-priority traffic cannot starve high-priority requests.</p>
       
     </article>
     
@@ -270,7 +304,7 @@
       <div class="finding-head">
         <span class="badge warning">warning</span>
         <span class="rule">SPOF-001</span>
-        <span class="fid">F-003</span>
+        <span class="fid">F-004</span>
       </div>
       <h3>brake_controller is a single point of failure</h3>
       <p class="condition"><strong>Condition:</strong> <code>on_critical_path AND in_degree &gt; 2</code></p>
@@ -306,7 +340,7 @@
 
   
   <h2>Service Interaction Graph</h2>
-  <div class="graph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 984 418" width="100%" role="img" aria-label="Service interaction graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/></marker></defs><rect x="0" y="0" width="984" height="418" fill="#0d1117"/><line x1="216.0" y1="163.0" x2="288.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="158.0" text-anchor="middle" class="edge-label">SENSOR_FRAME</text><line x1="456.0" y1="163.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="492.0" y="158.0" text-anchor="middle" class="edge-label">BRAKE_CMD</text><line x1="216.0" y1="71.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="112.0" text-anchor="middle" class="edge-label">DIAG_REQ</text><line x1="216.0" y1="255.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="204.0" text-anchor="middle" class="edge-label">TELEMETRY_REQ</text><g class="node" transform="translate(48.0,48.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">diagnostics_client</text></g><g class="node critical" transform="translate(48.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">sensor_service</text></g><g class="node" transform="translate(48.0,232.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">telemetry_client</text></g><g class="node critical" transform="translate(288.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">perception_service</text></g><g class="node critical has-finding" transform="translate(528.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">brake_controller</text></g></svg></div>
+  <div class="graph"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 984 418" width="100%" role="img" aria-label="Service interaction graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#718096"/></marker></defs><rect x="0" y="0" width="984" height="418" fill="#0d1117"/><line x1="216.0" y1="163.0" x2="288.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="252.0" y="158.0" text-anchor="middle" class="edge-label">SENSOR_FRAME</text><line x1="456.0" y1="163.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="492.0" y="158.0" text-anchor="middle" class="edge-label">BRAKE_CMD</text><line x1="216.0" y1="255.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="204.0" text-anchor="middle" class="edge-label">TELEMETRY_REQ</text><line x1="216.0" y1="71.0" x2="528.0" y2="163.0" stroke="#718096" stroke-width="1.5" marker-end="url(#arrow)"/><text x="372.0" y="112.0" text-anchor="middle" class="edge-label">DIAG_REQ</text><g class="node" transform="translate(48.0,48.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">diagnostics_client</text></g><g class="node critical" transform="translate(48.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">sensor_service</text></g><g class="node" transform="translate(48.0,232.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">telemetry_client</text></g><g class="node critical" transform="translate(288.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">perception_service</text></g><g class="node critical has-finding" transform="translate(528.0,140.0)"><rect width="168" height="46" rx="9" ry="9"/><text x="84.0" y="23.0" text-anchor="middle" dominant-baseline="central">brake_controller</text></g></svg></div>
   <div class="legend">
     <span><span class="swatch critical"></span> On critical path</span>
     <span><span class="swatch has-finding"></span> Has a finding</span>
@@ -329,11 +363,11 @@
         <td>brake_controller</td>
         <td>3</td>
         <td>0</td>
-        <td>0.119</td>
-        <td>315</td>
+        <td>8.151</td>
+        <td>350</td>
         <td>yes</td>
-        <td>0</td>
-        <td>36.2%</td>
+        <td>5</td>
+        <td>42.9%</td>
       </tr>
       
       <tr>
@@ -351,10 +385,10 @@
         <td>perception_service</td>
         <td>1</td>
         <td>1</td>
-        <td>2.507</td>
+        <td>4.658</td>
         <td>200</td>
         <td>yes</td>
-        <td>0</td>
+        <td>4</td>
         <td>0.0%</td>
       </tr>
       
@@ -397,41 +431,41 @@
       <tr>
         <td>diagnostics_client &rarr; brake_controller</td>
         <td>DIAG_REQ</td>
-        <td>39</td>
-        <td>0.076</td>
-        <td>0.139</td>
-        <td>0.129</td>
-        <td>0.301</td>
+        <td>50</td>
+        <td>0.065</td>
+        <td>4.742</td>
+        <td>8.165</td>
+        <td>12.837</td>
       </tr>
       
       <tr>
         <td>perception_service &rarr; brake_controller</td>
         <td>BRAKE_CMD</td>
         <td>200</td>
-        <td>0.081</td>
-        <td>0.130</td>
-        <td>0.120</td>
-        <td>0.237</td>
+        <td>0.058</td>
+        <td>0.259</td>
+        <td>1.190</td>
+        <td>1.833</td>
       </tr>
       
       <tr>
         <td>sensor_service &rarr; perception_service</td>
         <td>SENSOR_FRAME</td>
         <td>200</td>
-        <td>0.079</td>
-        <td>0.127</td>
-        <td>2.507</td>
-        <td>2.591</td>
+        <td>0.061</td>
+        <td>0.157</td>
+        <td>4.658</td>
+        <td>5.215</td>
       </tr>
       
       <tr>
         <td>telemetry_client &rarr; brake_controller</td>
         <td>TELEMETRY_REQ</td>
-        <td>76</td>
-        <td>0.086</td>
-        <td>0.147</td>
-        <td>0.108</td>
-        <td>0.234</td>
+        <td>100</td>
+        <td>0.077</td>
+        <td>7.942</td>
+        <td>8.176</td>
+        <td>16.025</td>
       </tr>
       
     </tbody>

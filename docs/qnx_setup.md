@@ -173,7 +173,7 @@ Copy `/tmp/raw_slog2.txt` back to the host.
 
 ```sh
 cd ~/Desktop/rt-architect
-.venv/bin/rtarch analyze examples/logs/real_qnx_flawed.log \
+.venv/bin/rtarch analyze examples/logs/real_qnx_flawed_slog2.txt \
   --scenario scenarios/brake_demo.json \
   --output examples/reports/real_qnx_flawed.html
 ```
@@ -184,8 +184,8 @@ Expected: `BOTTLENECK-001`, `CRITICAL-PATH-001`, `HEAD-OF-LINE-001`,
 Then repeat with `run_fixed_demo.sh` and compare:
 
 ```sh
-.venv/bin/rtarch compare examples/logs/real_qnx_flawed.log \
-                       examples/logs/real_qnx_fixed.log \
+.venv/bin/rtarch compare examples/logs/real_qnx_flawed_slog2.txt \
+                       examples/logs/real_qnx_fixed_slog2.txt \
                        --scenario scenarios/brake_demo.json \
                        --output examples/reports/real_qnx_comparison.html
 ```

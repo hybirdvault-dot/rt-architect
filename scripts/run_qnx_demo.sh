@@ -59,30 +59,30 @@ echo "     in the guest shell:  cd /tmp && sh scripts/run_flawed_demo.sh"
 echo "4/6 extracting slog2"
 echo "     in the guest shell:  sh scripts/extract_slog2.sh /tmp/raw_slog2.txt"
 echo "     then copy /tmp/raw_slog2.txt back to the host as"
-echo "     examples/logs/real_qnx_flawed.log"
+echo "     examples/logs/real_qnx_flawed_slog2.txt"
 
 # --- 5. analyse --------------------------------------------------------
 echo "5/6 analysing on the host"
-if [ -f examples/logs/real_qnx_flawed.log ]; then
-    .venv/bin/rtarch analyze examples/logs/real_qnx_flawed.log \
+if [ -f examples/logs/real_qnx_flawed_slog2.txt ]; then
+    .venv/bin/rtarch analyze examples/logs/real_qnx_flawed_slog2.txt \
         --scenario scenarios/brake_demo.json \
         --output examples/reports/real_qnx_flawed.html
 else
-    echo "     SKIPPED: examples/logs/real_qnx_flawed.log not present yet"
+    echo "     SKIPPED: examples/logs/real_qnx_flawed_slog2.txt not present yet"
 fi
 
 # --- 6. fixed demo + comparison ---------------------------------------
 echo "6/6 fixed demo + comparison"
-if [ -f examples/logs/real_qnx_fixed.log ]; then
-    .venv/bin/rtarch analyze examples/logs/real_qnx_fixed.log \
+if [ -f examples/logs/real_qnx_fixed_slog2.txt ]; then
+    .venv/bin/rtarch analyze examples/logs/real_qnx_fixed_slog2.txt \
         --scenario scenarios/brake_demo.json \
         --output examples/reports/real_qnx_fixed.html
-    .venv/bin/rtarch compare examples/logs/real_qnx_flawed.log \
-        examples/logs/real_qnx_fixed.log \
+    .venv/bin/rtarch compare examples/logs/real_qnx_flawed_slog2.txt \
+        examples/logs/real_qnx_fixed_slog2.txt \
         --scenario scenarios/brake_demo.json \
         --output examples/reports/real_qnx_comparison.html
 else
-    echo "     SKIPPED: examples/logs/real_qnx_fixed.log not present yet"
+    echo "     SKIPPED: examples/logs/real_qnx_fixed_slog2.txt not present yet"
 fi
 
 echo

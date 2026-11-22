@@ -75,6 +75,9 @@ def analyze(
     except OSError as exc:
         console.print(f"[red]Failed to read log file:[/red] {exc}")
         raise typer.Exit(code=1)
+    except UnicodeDecodeError as exc:
+        console.print(f"[red]Log file is not valid text:[/red] {exc}")
+        raise typer.Exit(code=1)
 
     console.print(
         f"Parsed [bold]{len(events)}[/bold] RTARCH events "

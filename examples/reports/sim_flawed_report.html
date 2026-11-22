@@ -159,13 +159,13 @@
     <span>Scenario: <strong>brake_demo</strong></span>
     <span>Target: <strong>QNX 8.0 QEMU</strong></span>
     <span>Deadline: <strong>5.0 ms</strong></span>
-    <span>Generated: <strong>last event ts_ns=21742352071793</strong></span>
+    <span>Generated: <strong>last event ts_ns=10793683400416</strong></span>
   </div>
   
   <div class="meta">
     <span>Source: <strong>/home/BALOCH/Desktop/rt-architect/examples/logs/sim_flawed_slog2.txt</strong></span>
-    <span>Size: <strong>355323 bytes</strong></span>
-    <span>SHA-256: <strong>2eb4a020250e6afc27410b5186a997ce19151319390350d334fc19eb3a805a4e</strong></span>
+    <span>Size: <strong>355008 bytes</strong></span>
+    <span>SHA-256: <strong>f25eea02f98e9ccb35bb0cd44be0bd126b1038fd25b014fc6e1b77e0f3ff9a4a</strong></span>
   </div>
   
 </header>
@@ -197,9 +197,9 @@
             
             <tr><td>in_degree</td><td>3</td></tr>
             
-            <tr><td>p95_processing_ns</td><td>8166559</td></tr>
+            <tr><td>p95_processing_ns</td><td>8177655</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>8.167</td></tr>
+            <tr><td>p95_processing_ms</td><td>8.178</td></tr>
             
             <tr><td>deadline_ms</td><td>5.0</td></tr>
             
@@ -218,7 +218,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller has in-degree 3 (&gt;2)</li><li>brake_controller p95 processing time is 8.17 ms</li><li>the deadline is 5.00 ms</li><li>processing exceeds 50% of the deadline</li>
+        <li>brake_controller has in-degree 3 (&gt;2)</li><li>brake_controller p95 processing time is 8.18 ms</li><li>the deadline is 5.00 ms</li><li>processing exceeds 50% of the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Split the service into fast-path and slow-path handlers, or separate high-priority control traffic from low-priority telemetry traffic.</p>
       
@@ -237,9 +237,9 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_processing_ns</td><td>8166559</td></tr>
+            <tr><td>p95_processing_ns</td><td>8177655</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>8.167</td></tr>
+            <tr><td>p95_processing_ms</td><td>8.178</td></tr>
             
             <tr><td>deadline_ns</td><td>5000000</td></tr>
             
@@ -258,7 +258,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller p95 processing time is 8.17 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
+        <li>brake_controller p95 processing time is 8.18 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
       
@@ -277,9 +277,9 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_processing_ns</td><td>11203527</td></tr>
+            <tr><td>p95_processing_ns</td><td>11051734</td></tr>
             
-            <tr><td>p95_processing_ms</td><td>11.204</td></tr>
+            <tr><td>p95_processing_ms</td><td>11.052</td></tr>
             
             <tr><td>deadline_ns</td><td>5000000</td></tr>
             
@@ -298,7 +298,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>perception_service p95 processing time is 11.20 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
+        <li>perception_service p95 processing time is 11.05 ms</li><li>the critical path deadline is 5.00 ms</li><li>processing time exceeds the deadline</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Identify the worst edge on the critical path and reduce its latency.</p>
       
@@ -317,7 +317,7 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>high_priority_blocked_count</td><td>43</td></tr>
+            <tr><td>high_priority_blocked_count</td><td>45</td></tr>
             
             <tr><td>low_priority_work_ratio</td><td>0.4286</td></tr>
             
@@ -334,7 +334,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>brake_controller blocked 43 high-priority request(s)</li><li>low-priority work is 42.9% of received traffic (threshold 40%)</li>
+        <li>brake_controller blocked 45 high-priority request(s)</li><li>low-priority work is 42.9% of received traffic (threshold 40%)</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Use a priority-based message queue or separate channels so low-priority traffic cannot starve high-priority requests.</p>
       
@@ -353,15 +353,15 @@
           <h4>Observed</h4>
           <table>
             
-            <tr><td>p95_queue_wait_ns</td><td>7897325</td></tr>
+            <tr><td>p95_queue_wait_ns</td><td>7710980</td></tr>
             
-            <tr><td>p95_queue_wait_ms</td><td>7.897</td></tr>
+            <tr><td>p95_queue_wait_ms</td><td>7.711</td></tr>
             
-            <tr><td>p95_total_ns</td><td>9019320</td></tr>
+            <tr><td>p95_total_ns</td><td>8830035</td></tr>
             
-            <tr><td>p95_total_ms</td><td>9.019</td></tr>
+            <tr><td>p95_total_ms</td><td>8.83</td></tr>
             
-            <tr><td>ratio</td><td>0.8756</td></tr>
+            <tr><td>ratio</td><td>0.8733</td></tr>
             
           </table>
         </div>
@@ -376,7 +376,7 @@
       </div>
       <h4>Evidence</h4>
       <ul class="evidence">
-        <li>p95 queue wait is 7.90 ms</li><li>p95 total latency is 9.02 ms</li><li>queue wait is 87.6% of total latency</li>
+        <li>p95 queue wait is 7.71 ms</li><li>p95 total latency is 8.83 ms</li><li>queue wait is 87.3% of total latency</li>
       </ul>
       <p class="recommendation"><strong>Recommendation:</strong> Reduce server load or increase the server thread pool; the receiver is spending more time waiting than the sender spends working.</p>
       
@@ -445,10 +445,10 @@
         <td>brake_controller</td>
         <td>3</td>
         <td>0</td>
-        <td>8.167</td>
+        <td>8.178</td>
         <td>350</td>
         <td>yes</td>
-        <td>43</td>
+        <td>45</td>
         <td>42.9%</td>
       </tr>
       
@@ -467,10 +467,10 @@
         <td>perception_service</td>
         <td>1</td>
         <td>1</td>
-        <td>11.204</td>
+        <td>11.052</td>
         <td>200</td>
         <td>yes</td>
-        <td>0</td>
+        <td>3</td>
         <td>0.0%</td>
       </tr>
       
@@ -514,40 +514,40 @@
         <td>diagnostics_client &rarr; brake_controller</td>
         <td>DIAG_REQ</td>
         <td>50</td>
-        <td>0.106</td>
-        <td>7.309</td>
-        <td>8.383</td>
-        <td>15.458</td>
+        <td>0.076</td>
+        <td>6.550</td>
+        <td>8.289</td>
+        <td>14.651</td>
       </tr>
       
       <tr>
         <td>perception_service &rarr; brake_controller</td>
         <td>BRAKE_CMD</td>
         <td>200</td>
-        <td>0.091</td>
-        <td>7.897</td>
-        <td>1.157</td>
-        <td>9.019</td>
+        <td>0.069</td>
+        <td>7.711</td>
+        <td>1.185</td>
+        <td>8.830</td>
       </tr>
       
       <tr>
         <td>sensor_service &rarr; perception_service</td>
         <td>SENSOR_FRAME</td>
         <td>200</td>
-        <td>0.070</td>
-        <td>0.118</td>
-        <td>11.204</td>
-        <td>11.307</td>
+        <td>0.059</td>
+        <td>0.156</td>
+        <td>11.052</td>
+        <td>11.132</td>
       </tr>
       
       <tr>
         <td>telemetry_client &rarr; brake_controller</td>
         <td>TELEMETRY_REQ</td>
         <td>100</td>
-        <td>0.074</td>
-        <td>8.015</td>
-        <td>8.179</td>
-        <td>16.126</td>
+        <td>0.071</td>
+        <td>8.036</td>
+        <td>9.108</td>
+        <td>16.133</td>
       </tr>
       
     </tbody>
